@@ -151,7 +151,7 @@ export default function MainPage() {
 
       {showInfo && hoveredSlot && equipment[hoveredSlot] && (
         <EquipmentInfo
-          key={hoveredSlot}
+          key={`${hoveredSlot}-${equipment[hoveredSlot]?.item_name}`}
           item={equipment[hoveredSlot]}
           slot={hoveredSlot}
           editable={isInfoLocked && !showSearch}
@@ -162,7 +162,7 @@ export default function MainPage() {
           onSave={(newItem) => {
             const updated = { ...equipment, [hoveredSlot]: newItem };
             const newPower = calculatePower(Object.values(updated), character.character_class);
-            const diff = newPower - originalPower;
+            //const diff = newPower - originalPower;
             setEquipment((prev) => ({ ...prev, [hoveredSlot]: newItem }));
             setSavedSlots((prev) => ({ ...prev, [hoveredSlot]: true }));
             //setSlotPowerDiffs((prev) => ({ ...prev, [hoveredSlot]: diff }));

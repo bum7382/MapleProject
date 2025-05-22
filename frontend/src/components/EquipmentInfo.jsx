@@ -46,17 +46,23 @@ export default function EquipmentInfo({
   //setSlotPowerDiffs,
   //slotPowerDiffs
 }) {
-  const [price, setPrice] = useState(item.price?.toString() || "0");
-  const [soulOption, setSoulOption] = useState(item.soul_option || "없음");
-  const [starforce, setStarforce] = useState(Number(item.starforce || 0));
-  const [starforceOption, setStarforceOption] = useState({ ...item.item_starforce_option });
-  const [potentialOptions, setPotentialOptions] = useState([]);
-  const [additionalOptions, setAdditionalOptions] = useState([]);
-  const noPotentialSlots = ["뱃지", "훈장", "포켓 아이템"];
-  const isSeedRing = item.special_ring_level && item.special_ring_level !== 0;
-  const cannotHavePotential = noPotentialSlots.includes(item.item_equipment_slot) || isSeedRing;
-  const [potentialGroup, setPotentialGroup] = useState({ grade: item.potential_option_grade || "없음", options: [] });
-  const [additionalGroup, setAdditionalGroup] = useState({ grade: item.additional_potential_option_grade || "없음", options: [] });
+  const [price, setPrice] = useState(item.price?.toString() || "0");  // 가격
+  const [soulOption, setSoulOption] = useState(item.soul_option || "없음"); // 소울
+  const [starforce, setStarforce] = useState(Number(item.starforce || 0));  // 스타포스
+
+  const [starforceOption, setStarforceOption] = useState({ ...item.item_starforce_option });  // 스타포스작
+  const [addOptions, setAddOptions] = useState({ ...item.item_add_option });  // 추가옵션
+  const [etcOptions, setEtcOptions] = useState({ ...item.item_etc_option });  // 주문서작
+
+  const [potentialOptions, setPotentialOptions] = useState([]); // 잠재옵션
+  const [additionalOptions, setAdditionalOptions] = useState([]); // 에디셔널 잠재옵션
+  const [potentialGroup, setPotentialGroup] = useState({ grade: item.potential_option_grade || "없음", options: [] });  // 잠재옵션 그룹
+  const [additionalGroup, setAdditionalGroup] = useState({ grade: item.additional_potential_option_grade || "없음", options: [] }); // 에디셔널 잠재옵션 그룹
+
+  const noPotentialSlots = ["뱃지", "훈장", "포켓 아이템"]; // 잠재옵션 불가 슬롯
+  const isSeedRing = item.special_ring_level && item.special_ring_level !== 0;  // 시드링 여부
+  const cannotHavePotential = noPotentialSlots.includes(item.item_equipment_slot) || isSeedRing;  // 잠재옵션 불가
+
 
   // const triggerPowerDiffUpdate = () => {
   //   if (typeof setSlotPowerDiffs !== "function") return;
@@ -107,6 +113,11 @@ export default function EquipmentInfo({
     ]);
     setStarforce(Number(item.starforce || 0));
     setStarforceOption({ ...item.item_starforce_option });
+
+    setAddOptions({ ...item.item_add_option });  // 추가옵션
+    setEtcOptions({ ...item.item_etc_option });  // 주문서작
+
+
   }, [item]);
 
   useEffect(() => {
@@ -187,9 +198,9 @@ export default function EquipmentInfo({
 
 
     // ⭐ 상태로 각 항목 관리
-    const [etc, setEtc] = useState(item.item_etc_option[key] || "");
+    const [etc, setEtc] = useState(etcOptions[key] || "");
     const [star, setStar] = useState(starforceOption[key] || "");
-    const [add, setAdd] = useState(item.item_add_option[key] || "");
+    const [add, setAdd] = useState(addOptions[key] || "");
 
     const parseValue = (val) => {
       if (typeof val === "string" && val.includes("%")) {
@@ -227,15 +238,24 @@ export default function EquipmentInfo({
       // 상태 및 객체 반영
       if (type === "etc") {
         setEtc(clean);
-        item.item_etc_option[key] = clean;
+        setEtcOptions((prev) => ({
+          ...prev,
+          [key]: clean
+        }));
         //triggerPowerDiffUpdate();
       } else if (type === "star") {
         setStar(clean);
-        starforceOption[key] = clean;
+        setStarforceOption((prev) => ({
+          ...prev,
+          [key]: clean
+        }));
         //triggerPowerDiffUpdate();
       } else if (type === "add") {
         setAdd(clean);
-        item.item_add_option[key] = clean;
+        setAddOptions((prev) => ({
+          ...prev,
+          [key]: clean
+        }));
         //triggerPowerDiffUpdate();
       }
     };
@@ -379,7 +399,9 @@ export default function EquipmentInfo({
       price: Number(price),
       soul_option: soulOption === "없음" ? null : soulOption,
       starforce: starforce.toString(),
-      item_starforce_option: starforceOption,
+      item_starforce_option: { ...starforceOption },
+      item_add_option: { ...addOptions },
+      item_etc_option: { ...etcOptions },
       potential_option_grade: potentialGroup.grade,
       additional_potential_option_grade: additionalGroup.grade,
       potential_option_1: formatTemplate(potentialGroup.options[0]?.template, potentialGroup.options[0]?.values),
@@ -391,6 +413,7 @@ export default function EquipmentInfo({
     };
 
     const hasChanged = isItemChanged(original, updated);
+
 
     setSlotColors((prev) => {
       const newColor = hasChanged ? "#44B7CF" : "transparent";
