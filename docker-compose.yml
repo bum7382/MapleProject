@@ -1,0 +1,23 @@
+services:
+  nginx:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    container_name: nginx-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html  
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend-service
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env 
+        

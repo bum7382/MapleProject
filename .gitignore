@@ -1,0 +1,7 @@
+# 백엔드 환경변수 제외
+backend/.env
+
+# 프론트엔드 환경변수 제외
+frontend/.env
+frontend/node_modules
+frontend/dist
