@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { isItemChanged } from "@/utils/equipmentUtils";
 import { calculatePower } from "@/utils/calculatePower";
 import OptionGroupEditor from "@/components/OptionGroupEditor";
+import useSoulOptions from "@/utils/useSoulOptions";
+import SoulOptionEditor from "@/components/SoulOptionEditor";
 
 const gradeColor = {
   "레전드리": "text-[#CCFF00]",
@@ -43,8 +45,6 @@ export default function EquipmentInfo({
   originalPower,
   setInventory,
   setSlotColors,
-  //setSlotPowerDiffs,
-  //slotPowerDiffs
 }) {
   const [price, setPrice] = useState(item.price?.toString() || "0");  // 가격
   const [soulOption, setSoulOption] = useState(item.soul_option || "없음"); // 소울
@@ -63,20 +63,19 @@ export default function EquipmentInfo({
   const isSeedRing = item.special_ring_level && item.special_ring_level !== 0;  // 시드링 여부
   const cannotHavePotential = noPotentialSlots.includes(item.item_equipment_slot) || isSeedRing;  // 잠재옵션 불가
 
+  // 소울
+  const soulOptions = useSoulOptions();
 
-  // const triggerPowerDiffUpdate = () => {
-  //   if (typeof setSlotPowerDiffs !== "function") return;
-  //   const baseItem = originalEquipment[slot];
-  //   const isSame = !isItemChanged(baseItem, item);
-  //   const currentPower = calculatePower(
-  //     Object.values({ ...originalEquipment, [slot]: item }),
-  //     character.character_class
-  //   );
-  //   const basePower = calculatePower(Object.values(originalEquipment), character.character_class);
-  //   const diff = isSame ? "현재 장착 중인 장비" : currentPower - basePower;
-  //   setSlotPowerDiffs((prev) => ({ ...prev, [slot]: diff }));
-  //   setOriginalPower(nowPower);
-  // };
+  const [soulTemplate, setSoulTemplate] = useState(() => {
+    const match = soulOptions.find(opt => item.soul_option?.startsWith(opt.label));
+    return match || null;
+  });
+  const [soulValue, setSoulValue] = useState(() => {
+    const valueMatch = item.soul_option?.match(/([0-9]+)/);
+    return valueMatch ? valueMatch[1] : "";
+  });
+
+
 
   // 1️⃣ item 바뀌면 초기값으로 starforce와 옵션 모두 세팅
   useEffect(() => {
@@ -117,23 +116,20 @@ export default function EquipmentInfo({
     setAddOptions({ ...item.item_add_option });  // 추가옵션
     setEtcOptions({ ...item.item_etc_option });  // 주문서작
 
+    // 소울
+    
+    const match = soulOptions.find(opt => item.soul_option?.startsWith(opt.label));
+    const valueMatch = item.soul_option?.match(/([0-9]+)/);
 
-  }, [item]);
+    setSoulTemplate(match || null);
+    setSoulValue(valueMatch ? valueMatch[1].replace(/^0+(?!$)/, "") : "");
+
+  }, [item, soulOptions]);
 
   useEffect(() => {
     if (!item || !originalEquipment || !character) return;
 
     const baseItem = originalEquipment[slot];
-    const isSameItem = !isItemChanged(baseItem, item);
-    const currentPower = calculatePower(
-      Object.values({ ...originalEquipment, [slot]: item }),
-      character.character_class
-    );
-    const basePower = calculatePower(Object.values(originalEquipment), character.character_class);
-
-    
-    //const diff = isSameItem ? "현재 장착 중인 장비" : currentPower - basePower;
-    //setSlotPowerDiffs((prev) => ({ ...prev, [slot]: diff }));
   }, [item, originalEquipment, character]);
 
 
@@ -242,21 +238,18 @@ export default function EquipmentInfo({
           ...prev,
           [key]: clean
         }));
-        //triggerPowerDiffUpdate();
       } else if (type === "star") {
         setStar(clean);
         setStarforceOption((prev) => ({
           ...prev,
           [key]: clean
         }));
-        //triggerPowerDiffUpdate();
       } else if (type === "add") {
         setAdd(clean);
         setAddOptions((prev) => ({
           ...prev,
           [key]: clean
         }));
-        //triggerPowerDiffUpdate();
       }
     };
 
@@ -397,7 +390,9 @@ export default function EquipmentInfo({
     const updated = {
       ...item,
       price: Number(price),
-      soul_option: soulOption === "없음" ? null : soulOption,
+      soul_option: soulTemplate
+        ? soulTemplate.template.replace("{value}", soulValue)
+        : null,
       starforce: starforce.toString(),
       item_starforce_option: { ...starforceOption },
       item_add_option: { ...addOptions },
@@ -520,7 +515,17 @@ export default function EquipmentInfo({
         )}
 
 
-      {item.item_equipment_slot === "무기" && (
+      {item.item_equipment_slot === "무기" && editable && (
+        <SoulOptionEditor
+          value={{ template: soulTemplate, value: soulValue }}
+          onChange={({ template, value }) => {
+            setSoulTemplate(template);
+            setSoulValue(value);
+          }}
+        />
+      )}
+
+      {item.item_equipment_slot === "무기" && !editable && (
         <div className="mt-3 border-t border-gray-600 pt-2">
           <div className="flex items-center mb-1">
             <img src="/images/info/soul_weapon.png" alt="소울" className="w-3 mr-2" />
@@ -531,6 +536,7 @@ export default function EquipmentInfo({
           </p>
         </div>
       )}
+
 
       {editable && (
         <div className="mt-4">

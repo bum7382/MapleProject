@@ -1,129 +1,153 @@
-// frontend/src/utils/calculatePower.js
-import potentialTemplates from "@/data/potentialOptions.json";
-import { jobStatMap } from "./jobStatMap";
+import jobStat from "../data/jobStat.json";
+import potentialOptions from "../data/potentialOptions.json";
+import setEffect from "../data/setEffect.json";
 
-const applyPotentialOptions = (item, stat) => {
-  const optionFields = [
-    "potential_option_1", "potential_option_2", "potential_option_3",
-    "additional_potential_option_1", "additional_potential_option_2", "additional_potential_option_3"
-  ];
+export function calculatePower(equipments, jobClass) {
+  const jobInfo = jobStat.find(j => j.class === jobClass);
+  if (!jobInfo) return 0;
 
-  const parseOption = (text) => {
-    for (const template of potentialTemplates) {
-      const regex = template.template
-        .replace(/\{value\}/g, "(\\d+)")
-        .replace(/\{percent\}/g, "(\\d+)")
-        .replace(/\{level\}/g, "(\\d+)");
-      const match = new RegExp("^" + regex + "$").exec(text);
-      if (match) {
-        const value = parseInt(match[1]);
-        if (template.label.includes("STR")) {
-          const key = template.type === "percent" ? "STR%" : "STR";
-          stat[key] = (stat[key] || 0) + value;
-        } else if (template.label.includes("DEX")) {
-          const key = template.type === "percent" ? "DEX%" : "DEX";
-          stat[key] = (stat[key] || 0) + value;
-        } else if (template.label.includes("INT")) {
-          const key = template.type === "percent" ? "INT%" : "INT";
-          stat[key] = (stat[key] || 0) + value;
-        } else if (template.label.includes("LUK")) {
-          const key = template.type === "percent" ? "LUK%" : "LUK";
-          stat[key] = (stat[key] || 0) + value;
-        } else if (template.label.includes("공격력")) {
-          const key = template.type === "percent" ? "공격력%" : "공격력";
-          stat[key] = (stat[key] || 0) + value;
-        } else if (template.label.includes("보스 몬스터 데미지")) {
-          stat["보스 데미지%"] = (stat["보스 데미지%"] || 0) + value;
-        } else if (template.label.includes("데미지 % 증가")) {
-          stat["데미지%"] = (stat["데미지%"] || 0) + value;
-        } else if (template.label.includes("크리티컬 데미지")) {
-          stat["크리티컬 데미지%"] = (stat["크리티컬 데미지%"] || 0) + value;
-        } else if (template.label.includes("올스탯")) {
-          const keys = template.type === "percent" ? ["STR%", "DEX%", "INT%", "LUK%"] : ["STR", "DEX", "INT", "LUK"];
-          keys.forEach((k) => stat[k] = (stat[k] || 0) + value);
+  // flat 값
+  const baseStats = { STR: 0, DEX: 0, INT: 0, LUK: 0, HP: 0 };
+
+  // percent 값
+  const percentStats = { STR: 0, DEX: 0, INT: 0, LUK: 0, HP: 0 };
+
+  // 공격력/마력
+  let attack = 0, attackPercent = 0;
+  let magic = 0, magicPercent = 0;
+
+
+  // 보스 데미지, 최종 데미지, 크리티컬 데미지
+  let bossDmg = 0, finalDmg = 0, critDmg = 135;
+  
+  // 세트 효과
+  const setCountMap = {};
+
+  // 제네시스 무기인지 확인 -> 제네시스 무기일 경우 최종 데미지 1.1배, 아닐 경우 1배
+  // 기존에 제네시스 무기 -> 일반 무기로 변환 시 0.9배 되어야 함.
+  const weapon = equipments.find(eq => eq.item_equipment_slot === "무기");
+  const isGenesisWeapon = weapon?.item_name?.includes("제네시스");
+  const finalDamageMultiplier = isGenesisWeapon ? 1.1 : 1.0;
+
+  // 현재 장착 중인 장비의 전체 옵션 계산
+  for (const eq of equipments) {
+    const total = eq.item_total_option || {}; // 전체
+    const add = eq.item_add_option || {}; // 추가 옵션
+    const etc = eq.item_etc_option || {}; // 주문서작
+    const star = eq.item_starforce_option || {};  // 스타포스작
+
+    // flat 값 계산
+    for (let stat of ["str", "dex", "int", "luk", "hp"]) {
+      const key = stat.toUpperCase();
+      baseStats[key] +=
+        +(total[stat] || 0) + +(add[stat] || 0) + +(etc[stat] || 0) + +(star[stat] || 0);
+    }
+
+    // 공격력 계산
+    attack += +(total.attack_power || 0) + +(add.attack_power || 0) + +(etc.attack_power || 0) + +(star.attack_power || 0);
+    
+    // 마력 계산  
+    magic += +(total.magic_power || 0) + +(add.magic_power || 0) + +(etc.magic_power || 0) + +(star.magic_power || 0);
+
+    // 보스 공격력 계산
+    bossDmg += +(total.boss_damage || 0);
+
+    // 소울 옵션이 있을 경우 계산
+    if (eq.soul_option?.includes("보스 몬스터 데미지")) {
+      const val = parseInt(eq.soul_option.replace(/[^0-9]/g, ""));
+      if (!isNaN(val)) bossDmg += val;
+    }
+
+    // 잠재 능력 계산
+    const allPotentials = [
+      eq.potential_option_1, eq.potential_option_2, eq.potential_option_3,
+      eq.additional_potential_option_1, eq.additional_potential_option_2, eq.additional_potential_option_3
+    ];
+
+    // 잠재 계산
+    for (const pot of allPotentials) {
+      const p = potentialOptions.find(p => pot?.includes(p.label));
+      if (!p) continue;
+      const match = pot.match(/([0-9]+)/);
+      const val = match ? +match[1] : 0;
+      const key = p.stat;
+
+      if (p.type === "percent") {
+        if (key === "damage") finalDmg += val;
+        else if (key === "boss_damage") bossDmg += val;
+        else if (key === "critical_damage") critDmg += val;
+        else if (key === "올스탯") {
+          for (let s of ["STR", "DEX", "INT", "LUK"]) {
+            percentStats[s] += val;
+          }
         }
-        break;
+        else if (percentStats[key?.toUpperCase()] !== undefined)
+          percentStats[key.toUpperCase()] += val;
+        else if (key === "attack_power") atkPercent += val;
+      } else if (p.type === "flat") {
+        if (["STR", "DEX", "INT", "LUK", "HP"].includes(key?.toUpperCase())) {
+          baseStats[key.toUpperCase()] += val;
+        } else if (key === "attack_power") {
+          atk += val;
+        }
       }
     }
-  };
 
-  optionFields.forEach((field) => {
-    if (item[field]) parseOption(item[field]);
-  });
-};
-
-export const calculatePower = (
-  items,
-  job,
-  extraStat = { main: 0, sub: 0 }, // 심볼, 유니온 등 %미적용 스탯
-  isGenesisFn = (item) => false
-) => {
-  const stat = {
-    STR: 0, DEX: 0, INT: 0, LUK: 0,
-    "STR%": 0, "DEX%": 0, "INT%": 0, "LUK%": 0,
-    공격력: 0, "공격력%": 0,
-    마력: 0,
-    "보스 데미지%": 0,
-    "데미지%": 0,
-    "크리티컬 데미지%": 0,
-  };
-
-  const optionKeys = [
-    "item_total_option",
-    "item_starforce_option",
-    "item_add_option",
-    "item_etc_option",
-    "item_base_option",
-    "item_exceptional_option"
-  ];
-
-  items.forEach((item) => {
-    optionKeys.forEach((key) => {
-      const opt = item[key] || {};
-      for (const [k, v] of Object.entries(opt)) {
-        const value = Math.floor(parseFloat(v || "0"));
-        const upperK = k.toUpperCase();
-
-        if (["str", "dex", "int", "luk"].includes(k)) stat[upperK] += value;
-        if (["str", "dex", "int", "luk"].includes(k.replace("_percent", "")) && k.endsWith("_percent"))
-          stat[upperK.replace("%", "") + "%"] += value;
-
-        if (k === "attack_power") stat["공격력"] += value;
-        if (k === "attack_power_percent") stat["공격력%"] += value;
-
-        if (k === "damage") stat["데미지%"] += value;
-        if (k === "boss_damage") stat["보스 데미지%"] += value;
-        if (k === "critical_damage") stat["크리티컬 데미지%"] += value;
-
-        if (k === "all_stat") {
-          ["STR", "DEX", "INT", "LUK"].forEach((s) => stat[s] += value);
-        }
-        if (k === "all_stat_percent") {
-          ["STR%", "DEX%", "INT%", "LUK%"].forEach((s) => stat[s] += value);
-        }
+    Object.entries(setEffect).forEach(([setName, data]) => {
+      const items = data.setItems || [];
+      const matchList = data.match || [];
+      if (
+        items.includes(eq.item_name) ||
+        matchList.some(keyword => eq.item_name?.includes(keyword))
+      ) {
+        setCountMap[setName] = (setCountMap[setName] || 0) + 1;
       }
     });
+  }
 
-    // 🔥 잠재옵션 반영
-    applyPotentialOptions(item, stat);
-  });
+  for (const [setName, count] of Object.entries(setCountMap)) {
+    const bonus = setEffect[setName].bonuses;
+    for (let i = 1; i <= count; i++) {
+      const entry = bonus?.[i];
+      if (!entry) continue;
+      for (const [k, v] of Object.entries(entry)) {
+        const key = k.replace(/ /g, "");
+        if (key === "공격력") atk += v;
+        else if (key === "보스몬스터데미지") bossDmg += v;
+        else if (key === "올스탯") {
+          for (let s of ["STR", "DEX", "INT", "LUK"]) baseStats[s] += v;
+        } else if (key === "최대HP") baseStats.HP += v;
+        else if (key === "최대HP%") percentStats.HP += v;
+        else if (key === "크리티컬데미지") critDmg += v;
+      }
+    }
+  }
 
-  const mainStat = jobStatMap[job]?.주스탯 || "STR";
-  const subStat = jobStatMap[job]?.부스탯 || "DEX";
+  // 주스탯, 부스탯 계산
+  const mainStat = jobInfo.main_stat;
+  const subStat = jobInfo.sub_stat;
 
-  const main = Math.floor(
-    stat[mainStat] * (1 + (stat[mainStat + "%"] || 0) / 100) + (extraStat.main || 0)
-  );
-  const sub = Math.floor(
-    stat[subStat] * (1 + (stat[subStat + "%"] || 0) / 100) + (extraStat.sub || 0)
-  );
+  let finalStat = 0;
+  if (mainStat === "HP") {
+    finalStat = Math.floor(baseStats.HP * (1 + percentStats.HP / 100));
+  } else {
+    const main = baseStats[mainStat];
+    const mainPercent = percentStats[mainStat];
+    const sub = Array.isArray(subStat) ? subStat.reduce((a, s) => a + baseStats[s], 0) : baseStats[subStat];
+    const subPercent = Array.isArray(subStat)
+      ? subStat.reduce((a, s) => a + percentStats[s], 0) / subStat.length
+      : percentStats[subStat];
 
-  const baseStatScore = Math.floor((main * 4 + sub) / 100);
-  const atk = Math.floor(stat["공격력"] * (1 + stat["공격력%"] / 100));
-  const dmg = 100 + stat["데미지%"] + stat["보스 데미지%"];
-  const crit = 135 + stat["크리티컬 데미지%"];
-  const final = items.some(isGenesisFn) ? 110 : 100;
+    const finalMain = Math.floor(main * (1 + mainPercent / 100));
+    const finalSub = Math.floor(sub * (1 + subPercent / 100));
+    finalStat = Math.floor((finalMain * 4 + finalSub) / 100);
+  }
 
-  const power = Math.floor((baseStatScore * atk * dmg * crit * final) / 1000000);
-  return isNaN(power) ? 0 : power;
-};
+  const finalAtk = Math.floor(atk * (1 + atkPercent / 100));
+  const finalBoss = 100 + bossDmg;
+  const finalCrit = critDmg;
+  const finalDamage = finalDmg;
+
+  const power = Math.floor(finalStat * finalAtk * finalBoss * finalCrit * finalDamage * finalDamageMultiplier / 100000000);
+  return power;
+}

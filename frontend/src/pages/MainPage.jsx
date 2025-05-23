@@ -20,13 +20,6 @@ export default function MainPage() {
   const { inventory, setInventory } = useMapleStore();
   const [originalEquipment, setOriginalEquipment] = useState({});
   
-//  const [slotPowerDiffs, setSlotPowerDiffs] = useState({});
-
-  // const totalPowerDiff = useMemo(() => {
-  //   return Object.values(slotPowerDiffs)
-  //     .filter((val) => typeof val === "number") // 숫자인 것만 더함
-  //     .reduce((acc, cur) => acc + cur, 0);
-  // }, [slotPowerDiffs]);
 
   useEffect(() => {
     const saved = localStorage.getItem("selectedCharacter");
@@ -102,9 +95,6 @@ export default function MainPage() {
   return (
     <div className="relative w-screen h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
          style={{ backgroundImage: "url(/images/background_blur.png)" }}>
-      {/* <div className="bg-[#1F2735] bg-opacity-90 absolute top-10 left-1/2 -translate-x-1/2 z-50 text-white text-xl font-kohi">
-        전투력 변화량: {totalPowerDiff >= 0 ? `+${totalPowerDiff.toLocaleString()}` : totalPowerDiff.toLocaleString()}
-      </div> */}
 
       <div className="relative w-[420px] aspect-[420/509]">
         <img src="/images/inventory/equipment_bg.png" className="absolute inset-0 w-full h-full" />
@@ -162,10 +152,8 @@ export default function MainPage() {
           onSave={(newItem) => {
             const updated = { ...equipment, [hoveredSlot]: newItem };
             const newPower = calculatePower(Object.values(updated), character.character_class);
-            //const diff = newPower - originalPower;
             setEquipment((prev) => ({ ...prev, [hoveredSlot]: newItem }));
             setSavedSlots((prev) => ({ ...prev, [hoveredSlot]: true }));
-            //setSlotPowerDiffs((prev) => ({ ...prev, [hoveredSlot]: diff }));
             setInfoLocked(false);
           }}
           originalEquipment={originalEquipment}
@@ -177,8 +165,6 @@ export default function MainPage() {
           setInventory={setInventory}
           slotColors={slotColors}
           setSlotColors={setSlotColors}
-          //slotPowerDiffs={slotPowerDiffs}
-          //setSlotPowerDiffs={setSlotPowerDiffs}
         />
       )}
     </div>
