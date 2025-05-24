@@ -45,6 +45,10 @@ export default function EquipmentInfo({
   originalPower,
   setInventory,
   setSlotColors,
+  setPowerDiff,
+  setEquipment,
+  equipment,
+  baseStats,
 }) {
   const [price, setPrice] = useState(item.price?.toString() || "0");  // 가격
   const [soulOption, setSoulOption] = useState(item.soul_option || "없음"); // 소울
@@ -74,7 +78,6 @@ export default function EquipmentInfo({
     const valueMatch = item.soul_option?.match(/([0-9]+)/);
     return valueMatch ? valueMatch[1] : "";
   });
-
 
 
   // 1️⃣ item 바뀌면 초기값으로 starforce와 옵션 모두 세팅
@@ -194,9 +197,9 @@ export default function EquipmentInfo({
 
 
     // ⭐ 상태로 각 항목 관리
-    const [etc, setEtc] = useState(etcOptions[key] || "");
-    const [star, setStar] = useState(starforceOption[key] || "");
-    const [add, setAdd] = useState(addOptions[key] || "");
+    //const [etc, setEtc] = useState(etcOptions[key] || "");
+    //const [star, setStar] = useState(starforceOption[key] || "");
+    //const [add, setAdd] = useState(addOptions[key] || "");
 
     const parseValue = (val) => {
       if (typeof val === "string" && val.includes("%")) {
@@ -206,9 +209,9 @@ export default function EquipmentInfo({
     };
 
 
-    const etcVal = parseValue(etc);
-    const starVal = parseValue(star);
-    const addVal = parseValue(add);
+    const etcVal = parseValue(etcOptions[key] || 0);
+    const starVal = parseValue(starforceOption[key] || 0);
+    const addVal = parseValue(addOptions[key] || 0);
     const total = base + etcVal + starVal + addVal;
 
     if (!editable && total === 0) return null;
@@ -233,19 +236,16 @@ export default function EquipmentInfo({
 
       // 상태 및 객체 반영
       if (type === "etc") {
-        setEtc(clean);
         setEtcOptions((prev) => ({
           ...prev,
           [key]: clean
         }));
       } else if (type === "star") {
-        setStar(clean);
         setStarforceOption((prev) => ({
           ...prev,
           [key]: clean
         }));
       } else if (type === "add") {
-        setAdd(clean);
         setAddOptions((prev) => ({
           ...prev,
           [key]: clean
@@ -270,17 +270,17 @@ export default function EquipmentInfo({
                   <span className="text-[#AFADFF] text-s"> +</span>
                   <input
                     className="w-[30px] text-s bg-transparent border-b border-[#AFADFF] text-[#AFADFF] text-right"
-                    value={etc}
+                    value={etcOptions[key] || ""}
                     onChange={(e) => handleChange("etc", e.target.value)}
                   />
                   {isPercentKey && <span className="text-[#AFADFF] text-s">%</span>}
-                  {/* ⭐ 노란색: starforce → % 불가 속성이면만 렌더링 */}
+                  {/* ⭐ 노란색: starforce*/}
                   {!isPercentKey && (
                     <>
                       <span className="text-[#FFCC00] text-s"> +</span>
                       <input
                         className="w-[30px] text-s bg-transparent border-b border-[#FFCC00] text-[#FFCC00] text-right"
-                        value={star}
+                        value={starforceOption[key] || ""}
                         onChange={(e) => handleChange("star", e.target.value)}
                       />
                     </>
@@ -289,7 +289,7 @@ export default function EquipmentInfo({
                   <span className="text-[#0AE3AD] text-s"> +</span>
                   <input
                     className="w-[30px] text-s bg-transparent border-b border-[#0AE3AD] text-[#0AE3AD] text-right"
-                    value={add}
+                    value={addOptions[key] || ""}
                     onChange={(e) => handleChange("add", e.target.value)}
                   />
                   {isPercentKey && <span className="text-[#0AE3AD] text-s">%</span>}
@@ -386,17 +386,18 @@ export default function EquipmentInfo({
 
   const handleSaveClick = () => {
     const original = originalEquipment[slot];
+    
 
     const updated = {
-      ...item,
+      ...equipment[slot],
       price: Number(price),
       soul_option: soulTemplate
         ? soulTemplate.template.replace("{value}", soulValue)
         : null,
       starforce: starforce.toString(),
-      item_starforce_option: { ...starforceOption },
-      item_add_option: { ...addOptions },
-      item_etc_option: { ...etcOptions },
+      item_starforce_option: starforceOption,
+      item_add_option: addOptions,
+      item_etc_option: etcOptions,
       potential_option_grade: potentialGroup.grade,
       additional_potential_option_grade: additionalGroup.grade,
       potential_option_1: formatTemplate(potentialGroup.options[0]?.template, potentialGroup.options[0]?.values),
@@ -407,12 +408,11 @@ export default function EquipmentInfo({
       additional_potential_option_3: formatTemplate(additionalGroup.options[2]?.template, additionalGroup.options[2]?.values),
     };
 
+    const updatedEquipments = { ...currentEquipment, [slot]: updated };
     const hasChanged = isItemChanged(original, updated);
-
 
     setSlotColors((prev) => {
       const newColor = hasChanged ? "#44B7CF" : "transparent";
-      if (prev[slot] === newColor) return { ...prev };
       return { ...prev, [slot]: newColor };
     });
 
@@ -424,17 +424,26 @@ export default function EquipmentInfo({
     }
 
     setInventory((prev) => [...prev, updated]);
+    setEquipment(updatedEquipments);
 
-    
-    //const nowPower = calculatePower(Object.values(newEquip), character.character_class);
-    //const diff = nowPower - originalPower;
 
-    //setOriginalPower(nowPower); 
-    //setSlotPowerDiffs((prev) => ({ ...prev, [slot]: diff }));
+    const newPower = calculatePower(
+      Object.values(updatedEquipments),
+      character.class,
+      parseFloat(character.finalDamage || "100"),
+      character.weapon_is_genesis,
+      baseStats,
+      character.level
+    );
 
-    onSave(updated);
+    const scaledDiff = newPower - originalPower;
+    setPowerDiff(scaledDiff);
+
+    onSave(updated, scaledDiff);
     onClose();
   };
+
+
 
 
 
@@ -444,7 +453,7 @@ export default function EquipmentInfo({
       <button className="absolute top-2 right-2 text-gray-300 hover:text-white" onClick={onClose}>✕</button>
 
       <div className="mb-2 text-center">
-        {item.starforce !== "0" && !["칭호", "뱃지", "엠블렘", "보조무기"].includes(item.item_equipment_slot) && !isSeedRing &&
+        {Number(starforce) > 0 && !["칭호", "뱃지", "엠블렘", "보조무기"].includes(item.item_equipment_slot) && !isSeedRing &&
          renderStarforceGrid(starforce, +item.item_base_option.base_equipment_level)}
         <p className="text-lg">{item.item_name}</p>
       </div>

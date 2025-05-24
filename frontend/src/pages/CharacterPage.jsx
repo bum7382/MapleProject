@@ -18,7 +18,6 @@ export default function CharacterPage({ user: mongoUser }) {
   const fetchCharacters = async (fbUser) => {
     try {
       const token = await fbUser.getIdToken();
-      console.log("🔥 Firebase 토큰:", token);
 
       const res = await axios.get(`${API_BASE}/api/character`, {
         headers: {

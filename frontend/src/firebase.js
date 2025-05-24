@@ -17,9 +17,6 @@ const auth = getAuth(app);
 
 // 자동 로그인 유지 설정
 setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("✅ Firebase Auth: 로그인 세션 유지 설정 완료");
-  })
   .catch((error) => {
     console.error("❌ Firebase Auth: 세션 유지 설정 실패", error);
   });

@@ -25,14 +25,16 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
   const handleConfirm = async () => {
     const char = characters[selectedIndex];
     const result = await fetchCharacterByName(char.name);
-
     const selectedCharacter = {
-      name: char.name,
-      level: char.level,
-      image: char.image,
-      character_id: result.character_id, // 여기만 추가되면 끝
+      name: result.character_name,
+      level: result.character_level,
+      image: result.character_image,
+      character_id: result.character_id,
+      class: result.character_class,  // 직업
+      weapon_is_genesis: false, // 제네시스 무기인지
+      power: result.final_stat?.find(stat => stat.stat_name === "전투력")?.stat_value || "0",
+      finalDamage: result.final_stat?.find(stat => stat.stat_name === "최종 데미지")?.stat_value || "0"
     };
-
     localStorage.setItem("selectedCharacter", JSON.stringify(selectedCharacter));
     navigate("/main");
   };
