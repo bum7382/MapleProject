@@ -29,14 +29,30 @@ export default function EquipmentTest() {
 
 
   return (
-    <div className="overflow-y-auto relative w-screen h-screen bg-gray-100">
-      <EquipmentInfo
-        item={mockItem}
-        editable={true}
-        slot="반지1"
-        onClose={() => console.log("❌ 닫힘")}
-        onSave={(item) => console.log("✅ 저장됨:", item)}
-      />
-    </div>
+    <EquipmentInfo
+      item={mockItem}
+      editable={true}
+      slot="모자"
+      onClose={() => console.log("❌ 닫힘")}
+      onSave={(item) => console.log("✅ 저장됨:", item)}
+      originalEquipment={{ 모자: mockItem }}
+      setOriginalEquipment={() => {}}
+      currentEquipment={{ 모자: mockItem }}
+      equippedItems={{ 모자: mockItem }}
+      character={{
+        class: "다크나이트",
+        finalDamage: "100",
+        weapon_is_genesis: false,
+        level: 275
+      }}
+      originalPower={100000}
+      setSlotColors={() => {}}
+      setPowerDiff={() => {}}
+      setEquipment={() => {}}
+      equipment={{ 모자: mockItem }}
+      baseStats={{ STR: 4000, DEX: 3000, INT: 2000, LUK: 1000, HP: 30000 }}
+      setInventory={() => {}}
+      inventory={[]}
+    />
   );
 }

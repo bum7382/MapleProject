@@ -219,5 +219,6 @@ export function calculatePower(equipments, jobClass, finalDmg, originalIsGenesis
   finalDmg /= 100;
 
   const power = Math.floor(finalStat * finalAtk * finalBoss * finalCrit * finalDmg * finalDamageMultiplier);
+  console.log(`계산한 전투력: ${power}`);
   return isNaN(power) ? 0 : power;
 }

@@ -8,6 +8,7 @@ import { fileURLToPath } from "url"; // ✅ ESM용 경로 처리
 // 라우터 import
 import userRoutes from "./routes/user.js";
 import characterRoutes from "./routes/character.js";
+import inventoryRouter from "./routes/inventory.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.json());
 // 라우터 연결
 app.use("/api/user", userRoutes);
 app.use("/api/character", characterRoutes);
+app.use("/api/inventory", inventoryRouter);
 
 
 // ✅ 정적 파일 제공 (Vite 빌드 폴더 경로)

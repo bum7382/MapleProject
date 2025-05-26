@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 
 const CharacterSchema = new mongoose.Schema({
-  userId: { type: String, required: true, unique: true },
+  userId: { type: String, required: true },
   name: { type: String, required: true },
   level: { type: Number, required: true },
   image: { type: String, required: true },

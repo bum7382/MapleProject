@@ -6,6 +6,11 @@ import { calculatePower } from "@/utils/calculatePower";
 import useMapleStore from "../store/useMapleStore";
 import BasicStatModal from "@/components/BasicStatModal";
 import jobStat from "@/data/jobStat.json"; // 캐릭터별 주/부스탯 정보
+import InventoryPanel from "../components/InventoryPanel.jsx";
+import { getAuth } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { isItemChanged } from "@/utils/equipmentUtils";
+
 
 export default function MainPage() {
   const [loading, setLoading] = useState(true);
@@ -19,9 +24,12 @@ export default function MainPage() {
   const { selectedSlot, setSelectedSlot } = useMapleStore();
   const { showSearch, setShowSearch } = useMapleStore();
   const { showInfo, setShowInfo } = useMapleStore();
-  const { inventory, setInventory } = useMapleStore();
+  const [inventory, setInventory] = useState([]);
   const [originalEquipment, setOriginalEquipment] = useState({});
   const [equipmentLoaded, setEquipmentLoaded] = useState(false);
+  const [showInventory, setShowInventory] = useState(false);
+  const [loadingEquipment, setLoadingEquipment] = useState(false);
+  const navigate = useNavigate();
   
   const [showModal, setShowModal] = useState(false);
   const [baseStats, setBaseStats] = useState(null); // 입력된 기본값 저장
@@ -30,14 +38,39 @@ export default function MainPage() {
 
   const [isGenesis, setIsGenesis] = useState(null);
 
+  const [userId, setUserId] = useState(null);
+
   useEffect(() => {
-    const saved = localStorage.getItem("selectedCharacter");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && parsed.name) setCharacter(parsed);
-      } catch (e) {
-        console.error("❌ 캐릭터 데이터 파싱 실패", e);
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUserId(user.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+  // 캐릭터가 바뀔 때마다 장비/전투력/슬롯 초기화
+    setEquipment({});
+    setOriginalEquipment({});
+    setEquipmentLoaded(false);
+    setPowerDiff(0);
+    setSlotColors({});
+    setSavedSlots({});
+  }, [character?.character_id]);
+
+
+  useEffect(() => {
+    if (!character) {
+      const saved = localStorage.getItem("selectedCharacter");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.name) setCharacter(parsed);
+        } catch (e) {
+          console.error("❌ 캐릭터 데이터 파싱 실패", e);
+        }
       }
     }
     setLoading(false);
@@ -53,14 +86,16 @@ export default function MainPage() {
   }, [character?.class]);
 
   useEffect(() => {
-    if (!character?.character_id || equipmentLoaded) return;
+    if (!character?.character_id) return;
     const fetchEquipments = async () => {
+      setLoadingEquipment(true);
       try {
         const res = await fetch(`/api/itemEquipment?ocid=${character.character_id}`);
         const data = await res.json();
         const equipmentMap = {};
         const countMap = {};
         for (const item of data.item_equipment) {
+          
           let raw = item.item_equipment_slot || item.item_equipment_part;
           if (!raw) continue;
           if (raw === "펜던트") {
@@ -78,27 +113,44 @@ export default function MainPage() {
         const weaponIsGenesis = weapon?.item_name?.includes("제네시스") || false;
         setIsGenesis(weaponIsGenesis);
 
-        // ✅ character 상태에 weapon_is_genesis 추가
-        if (character.weapon_is_genesis !== isGenesis) {
-          setCharacter({
-            ...character,
-            weapon_is_genesis: isGenesis,
-          });
-        }
-
         setOriginalEquipment(equipmentMap);
         setEquipment(equipmentMap);
         setEquipmentLoaded(true);
 
       } catch (e) {
         console.error("❌ 장비 불러오기 실패:", e);
+      } finally {
+      setLoadingEquipment(false); // ✅ 끝나면 false
       }
     };
     fetchEquipments();
-  }, [character?.character_id, equipmentLoaded]);
+  }, [character?.character_id]);
 
   useEffect(() => {
-    if (!character?.class || isGenesis === null || !equipmentLoaded || !baseStats) return;
+    if (!userId) return;
+
+    const fetchInventory = async () => {
+      try {
+        const res = await fetch(`/api/inventory/${userId}`);
+        const data = await res.json();
+        setInventory(data);
+      } catch (err) {
+        console.error("❌ 인벤토리 불러오기 실패:", err);
+      }
+    };
+
+    fetchInventory();
+  }, [userId]);
+
+  // API로 처음 장비를 불러왔을 때 계산
+  useEffect(() => {
+      if (
+        !character?.class ||
+        isGenesis === null ||
+        !equipmentLoaded ||
+        !baseStats ||
+        !Object.keys(equipment).length
+      ) return;
 
     const basePower = calculatePower(
       Object.values(equipment),
@@ -108,10 +160,10 @@ export default function MainPage() {
       baseStats,
       character.level
     );
-
     setOriginalPower(basePower);
   }, [character?.class, isGenesis, equipmentLoaded, baseStats]);
 
+  // 기본 능력치 입력되었을 시 계산
   const handleSaveBaseStats = (newBaseStats) => {
     setBaseStats(newBaseStats);
     setShowModal(false);
@@ -120,15 +172,15 @@ export default function MainPage() {
       Object.values(equipment),
       character.class,
       parseFloat(character.finalDamage),
-      character.weapon_is_genesis,
+      isGenesis,
       newBaseStats
     );
-
     setOriginalPower(basePower);
   };
 
   const handleSlotClick = (slotName) => {
     setSelectedSlot(slotName);
+    setHoveredSlot(slotName);
     setInfoLocked(true);
     if (equipment[slotName]) {
       setShowInfo(true);
@@ -138,6 +190,11 @@ export default function MainPage() {
       setShowInfo(false);
     }
   };
+
+  const handleSaveToInventory = (newItem) => {
+    setInventory((prev) => [...prev, newItem]);
+  };
+  
   function formatKoreanNumber(num) {
     const abs = Math.abs(num);
     const eok = Math.floor(abs / 100000000);
@@ -206,6 +263,7 @@ export default function MainPage() {
             </span>
           </div>
         </div>
+        
         <img src="/images/inventory/equipment_info.png" className="absolute bottom-[454px] left-[14px] w-[172px] h-[22px]" />
         <div className="absolute top-[150px] left-1/2 -translate-x-1/2 z-10 flex flex-col items-center"
           onClick={() => setShowModal(true)}>
@@ -214,23 +272,188 @@ export default function MainPage() {
             {character?.name || "이름없음"}
           </span>
         </div>
-
+        {/* 전체 화면 기준 오른쪽 하단 캐릭터 선택 버튼 */}
+        <button
+          className="absolute top-[380px] left-[150px] px-4 py-2 bg-[#44B7CF] text-white text-sm font-morris rounded hover:bg-[#60DCF6] active:bg-[#2b7f94] z-50"
+          onClick={() => navigate("/character")}
+        >
+          캐릭터 선택으로
+        </button>
         {slots.map(({ name, top, left }) => (
-          <div key={name} style={{ top: `${top}px`, left: `${left}px` }} className="absolute w-[48px] h-[48px] flex items-center justify-center"
-               onMouseEnter={() => { if (!isInfoLocked && equipment[name]) { setHoveredSlot(name); setShowInfo(true); } }}
-               onMouseLeave={() => { if (!isInfoLocked) { setShowInfo(false); setHoveredSlot(null); } }}>
-            <div className="absolute inset-0 rounded" style={{ backgroundColor: slotColors[name] || "transparent", zIndex: 5 }} />
+          <div
+            key={name}
+            style={{ top: `${top}px`, left: `${left}px` }}
+            className={`absolute w-[48px] h-[48px] flex items-center justify-center transition-all duration-150
+              ${selectedSlot === name ? "ring-2 ring-[#44B7CF] ring-offset-2 shadow-md rounded" : ""}`}
+            onMouseEnter={() => {
+              if (!isInfoLocked && equipment[name]) {
+                setHoveredSlot(name);
+                setShowInfo(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (!isInfoLocked) {
+                setShowInfo(false);
+                setHoveredSlot(null);
+              }
+            }}
+          >
+            {/* 배경 색 (슬롯 저장 상태에 따라 표시됨) */}
+            <div
+              className="absolute inset-0 rounded"
+              style={{ backgroundColor: slotColors[name] || "transparent", zIndex: 5 }}
+            />
+
+            {/* 아이템 아이콘 */}
             {equipment[name]?.item_icon && (
-              <img src={equipment[name].item_icon} alt={equipment[name].item_name}
-                   className="w-[36px] object-contain p-1 z-10 pointer-events-none" />
+              <img
+                src={equipment[name].item_icon}
+                alt={equipment[name].item_name}
+                className="w-[36px] object-contain p-1 z-10 pointer-events-none"
+              />
             )}
-            <button className={`${slotStyle} z-20`} style={{ backgroundColor: "transparent" }}
-                    onClick={() => handleSlotClick(name)} />
+
+            {/* 클릭 가능한 버튼 */}
+            <button
+              className={`${slotStyle} z-20`}
+              style={{ backgroundColor: "transparent" }}
+              onClick={() => handleSlotClick(name)}
+            />
           </div>
         ))}
-        <button className="absolute bottom-[4px] left-[15px] w-[35px] h-[35px]">
+        {selectedSlot && equipment[selectedSlot] && (
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            {/* 초기화 버튼 */}
+            <button
+              onClick={() => {
+                if (!originalEquipment[selectedSlot]) return;
+                setEquipment((prev) => ({
+                  ...prev,
+                  [selectedSlot]: originalEquipment[selectedSlot]
+                }));
+                setSavedSlots((prev) => ({
+                  ...prev,
+                  [selectedSlot]: false
+                }));
+                setSlotColors((prev) => ({
+                  ...prev,
+                  [selectedSlot]: "transparent"
+                }));
+
+                // 전투력 재계산
+                const newPower = calculatePower(
+                  Object.values({ ...equipment, [selectedSlot]: originalEquipment[selectedSlot] }),
+                  character.class,
+                  parseFloat(character.finalDamage || "100"),
+                  isGenesis,
+                  baseStats,
+                  character.level
+                );
+                setPowerDiff(newPower - originalPower);
+
+                setShowInfo(false);
+                setInfoLocked(false);
+              }}
+              className="bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-morris px-4 py-1 rounded text-sm"
+            >
+              초기화
+            </button>
+
+            {/* 인벤토리 저장 버튼 */}
+            <button
+              onClick={async () => {
+                const item = equipment[selectedSlot];
+                console.log({item});
+
+                const isDuplicate = inventory.some((inv) =>
+                  JSON.stringify({ ...inv, price: undefined, uuid: undefined }) ===
+                  JSON.stringify({ ...item, price: undefined, uuid: undefined })
+                );
+
+                if (!isDuplicate) {
+                  const newItem = { ...item, uuid: crypto.randomUUID() };
+                  // 1. 로컬 인벤토리에 추가
+                  setInventory((prev) => [...prev, newItem]);
+
+                  try {
+                    await fetch(`/api/inventory/${userId}`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify(newItem),
+                    });
+                  } catch (err) {
+                    console.error("❌ 서버 저장 실패:", err);
+                  }
+                }
+              }}
+              className="bg-[#44B7CF] hover:bg-[#60DCF6] active:bg-[#2b7f94] font-morris text-white px-4 py-1 rounded text-sm"
+            >
+              인벤토리에 저장
+            </button>
+          </div>
+        )}
+
+
+        <button className="absolute bottom-[4px] left-[15px] w-[35px] h-[35px] active:brightness-75 hover:brightness-125 transition"
+          onClick={() => setShowInventory((prev) => !prev)}>
           <img src="/images/icons/back_normal.png" />
         </button>
+        
+        {showInventory && (
+          <div className="absolute -bottom-[220px] left-[50%] translate-x-[-50%]">
+            <InventoryPanel
+              items={inventory}
+              onSlotClick={(item, index) => {
+                if (!selectedSlot) return;
+                  if (item.item_equipment_slot !== selectedSlot) {
+                    alert("선택한 슬롯에 장착할 수 없는 아이템입니다.");
+                  return;
+                }
+                // 장착!
+                setEquipment((prev) => ({
+                  ...prev,
+                  [selectedSlot]: item
+                }));
+                
+                // 전투력 계산
+                const newPower = calculatePower(
+                  Object.values({ ...equipment, [selectedSlot]: item }),
+                  character.class,
+                  parseFloat(character.finalDamage || "100"),
+                  character.weapon_is_genesis,
+                  baseStats,
+                  character.level
+                );
+                setPowerDiff(newPower - originalPower);
+                // ✅ slotColors 갱신 로직 추가 (여기!)
+                const original = originalEquipment[selectedSlot];
+                const isChanged = isItemChanged(item, original);
+                setSlotColors((prev) => ({
+                  ...prev,
+                  [selectedSlot]: isChanged ? '#44B7CF' : 'transparent'
+                }));
+                // 착용 후 info창 닫기
+                setShowInfo(false);
+                setInfoLocked(false);
+              }}
+              onDeleteClick={async (itemToDelete) => {
+                // 1. 로컬 인벤토리에서 제거
+                setInventory((prev) => prev.filter(i => i.uuid !== itemToDelete.uuid));
+
+                // 2. DB에서도 삭제
+                try {
+                  await fetch(`/api/inventory/${userId}/${itemToDelete.uuid}`, {
+                    method: "DELETE",
+                  });
+                } catch (err) {
+                  console.error("❌ 인벤토리 삭제 실패:", err);
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {showSearch && (
@@ -267,6 +490,7 @@ export default function MainPage() {
           equippedItems={Object.values(equipment)}
           character={character}
           originalPower={originalPower}
+          inventory={inventory}
           setInventory={setInventory}
           slotColors={slotColors}
           setSlotColors={setSlotColors}

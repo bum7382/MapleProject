@@ -20,4 +20,6 @@ services:
       - ./backend:/app
     env_file:
       - ./backend/.env 
+
+
         

@@ -43,12 +43,13 @@ export default function EquipmentInfo({
   equippedItems,
   character,
   originalPower,
-  setInventory,
   setSlotColors,
   setPowerDiff,
   setEquipment,
   equipment,
   baseStats,
+  setInventory,
+  inventory
 }) {
   const [price, setPrice] = useState(item.price?.toString() || "0");  // 가격
   const [soulOption, setSoulOption] = useState(item.soul_option || "없음"); // 소울
@@ -66,7 +67,7 @@ export default function EquipmentInfo({
   const noPotentialSlots = ["뱃지", "훈장", "포켓 아이템"]; // 잠재옵션 불가 슬롯
   const isSeedRing = item.special_ring_level && item.special_ring_level !== 0;  // 시드링 여부
   const cannotHavePotential = noPotentialSlots.includes(item.item_equipment_slot) || isSeedRing;  // 잠재옵션 불가
-
+  
   // 소울
   const soulOptions = useSoulOptions();
 
@@ -132,7 +133,6 @@ export default function EquipmentInfo({
   useEffect(() => {
     if (!item || !originalEquipment || !character) return;
 
-    const baseItem = originalEquipment[slot];
   }, [item, originalEquipment, character]);
 
 
@@ -386,7 +386,6 @@ export default function EquipmentInfo({
 
   const handleSaveClick = () => {
     const original = originalEquipment[slot];
-    
 
     const updated = {
       ...equipment[slot],
@@ -411,21 +410,19 @@ export default function EquipmentInfo({
     const updatedEquipments = { ...currentEquipment, [slot]: updated };
     const hasChanged = isItemChanged(original, updated);
 
+    if (!hasChanged) {
+      setEquipment(updatedEquipments);
+      onClose();
+      return;
+    }
+
+
     setSlotColors((prev) => {
       const newColor = hasChanged ? "#44B7CF" : "transparent";
       return { ...prev, [slot]: newColor };
     });
 
-    if (!isItemChanged(original, updated)) {
-      setOriginalEquipment((prev) => ({
-        ...prev,
-        [slot]: updated,
-      }));
-    }
-
-    setInventory((prev) => [...prev, updated]);
     setEquipment(updatedEquipments);
-
 
     const newPower = calculatePower(
       Object.values(updatedEquipments),
@@ -439,10 +436,52 @@ export default function EquipmentInfo({
     const scaledDiff = newPower - originalPower;
     setPowerDiff(scaledDiff);
 
-    onSave(updated, scaledDiff);
+    onSave?.(updated, scaledDiff);
     onClose();
   };
 
+  const original = originalEquipment[slot];
+  const current = item;
+
+  const hasChanged = isItemChanged(original, current);
+
+  const currentEquipMap = { ...equipment, [slot]: current };
+  const originalEquipMap = { ...equipment, [slot]: original };
+
+  // 슬롯 외 장비 유지하면서, 해당 슬롯만 각각 current / original 로 계산
+  const currentPower = calculatePower(
+    Object.values(currentEquipMap),
+    character.class,
+    parseFloat(character.finalDamage || "100"),
+    character.weapon_is_genesis,
+    baseStats,
+    character.level
+  );
+
+  const originalPowerForSlot = calculatePower(
+    Object.values(originalEquipMap),
+    character.class,
+    parseFloat(character.finalDamage || "100"),
+    character.weapon_is_genesis,
+    baseStats,
+    character.level
+  );
+
+  const diff = Math.floor(currentPower - originalPowerForSlot);
+
+  function formatKoreanNumber(num) {
+    const abs = Math.abs(num);
+    const eok = Math.floor(abs / 100000000);
+    const man = Math.floor((abs % 100000000) / 10000);
+    const rest = abs % 10000;
+
+    const parts = [];
+    if (eok > 0) parts.push(`${eok}억`);
+    if (man > 0) parts.push(`${man}만`);
+    if (rest > 0 || parts.length === 0) parts.push(`${rest}`);
+
+    return parts.join(" ");
+  }
 
 
 
@@ -465,9 +504,21 @@ export default function EquipmentInfo({
         </div>
         <div className="text-sm text-right w-[320px]">
           <p className="mt-2 text-[#85919F] text-[15px]">전투력 증가량</p>
-          <p className="mt-3 text-white text-[27px] font-kohi whitespace-nowrap">
-            현재 장착중인 장비
+          <p
+            className={`mt-3 text-[27px] font-kohi whitespace-nowrap ${
+              diff >= 0 ? "text-white" : "text-[#F20068]"
+            }`}
+          >
+            {!hasChanged
+              ? "현재 장착 중인 장비"
+              : `${diff === 0 ? "" : diff > 0 ? "+" : "-"}${formatKoreanNumber(Math.abs(diff))}`}
           </p>
+          {diff > 0 && price !== "0" && Number(price) !== 0 && (
+          <div className="mt-3 text-s text-white font-morris text-right">
+            1억 메소당 전투력 +{((diff / Number(price)) * 100000000).toFixed(2)}
+          </div>
+        )}
+
         </div>
       </div>
 
@@ -556,7 +607,11 @@ export default function EquipmentInfo({
           <input
             type="text"
             value={price}
-            onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, ""); // 숫자만 추출
+              const trimmed = raw.replace(/^0+(?!$)/, "");   // 앞자리 0 제거 (단, 0 하나는 유지)
+              setPrice(trimmed);
+            }}
             className="w-full border px-2 py-1 rounded text-sm mt-1 text-black"
           />
           <button onClick={handleSaveClick} className="mt-3 w-full py-2 bg-blue-500 hover:bg-blue-600 rounded text-sm text-white">

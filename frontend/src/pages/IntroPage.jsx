@@ -69,13 +69,6 @@ export default function IntroPage({ setUser }) {
         >
           로그인
         </button>
-        <button
-          onClick={() => setShowSearchModal(true)}
-          className="w-[130px] h-11 font-morris text-white text-lg rounded-full 
-                     bg-[#44B7CF] hover:bg-[#369EBC] border-2 border-white shadow-md"
-        >
-          비로그인
-        </button>
       </div>
 
       {showLogin && (

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useToast } from "../utils/toastContext.jsx";
 import { fetchCharacterByName } from "../utils/fetchCharacterByName";
+import useMapleStore from "@/store/useMapleStore"; // store에서 가져오기
 
 export default function CharacterSelect({ characters, setCharacters, userId, user }) {
   const MAX_SLOTS = 12;
@@ -12,6 +13,8 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const { showToast } = useToast(); // ✅ 훅 사용
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  const { setCharacter } = useMapleStore();
 
   const handleSlotClick = (index) => {
     const char = characters[index];
@@ -25,6 +28,16 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
   const handleConfirm = async () => {
     const char = characters[selectedIndex];
     const result = await fetchCharacterByName(char.name);
+    const rawFinalDamage = result.final_stat?.find(
+      (stat) => stat.stat_name === "최종 데미지"
+    )?.stat_value;
+    let finalDamage = "100"; // 기본값
+    if (rawFinalDamage) {
+      const parsed = parseFloat(rawFinalDamage);
+      if (!isNaN(parsed) && parsed >= 100) {
+        finalDamage = parsed.toString(); // 100 이상만 사용
+      }
+    }
     const selectedCharacter = {
       name: result.character_name,
       level: result.character_level,
@@ -33,9 +46,12 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
       class: result.character_class,  // 직업
       weapon_is_genesis: false, // 제네시스 무기인지
       power: result.final_stat?.find(stat => stat.stat_name === "전투력")?.stat_value || "0",
-      finalDamage: result.final_stat?.find(stat => stat.stat_name === "최종 데미지")?.stat_value || "0"
+      finalDamage
     };
     localStorage.setItem("selectedCharacter", JSON.stringify(selectedCharacter));
+    setCharacter(selectedCharacter);
+    console.log(`{${result.character_name}로 선택.}`);
+    console.log({result});
     navigate("/main");
   };
 
@@ -69,10 +85,11 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
         setShowModal(false);
       })
       .catch((err) => {
+        const status = err.response?.status;
         const serverMessage = err.response?.data?.message || "";
         const msg = serverMessage || err.message || "서버 오류";
 
-        if (serverMessage === "이미 존재하는 캐릭터입니다.") {
+        if (status === 409 || serverMessage.includes("이미 존재")) {
           showToast("❌ 이미 존재하는 캐릭터입니다.", "error");
         } else {
           showToast("❌ 캐릭터 추가 실패\n" + msg, "error");
@@ -93,6 +110,7 @@ export default function CharacterSelect({ characters, setCharacters, userId, use
     if (!confirmDelete) return;
 
     const token = await user.getIdToken(); // ✅ 인증용 토큰 받아오기
+    console.log("🔥 토큰:", token);
 
     axios
       .delete(`${API_BASE}/api/character/${target._id}`, {

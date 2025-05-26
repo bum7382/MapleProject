@@ -18,7 +18,7 @@ router.post("/", verifyToken, async (req, res) => {
   try {
     const existing = await Character.findOne({ userId, name });
     if (existing) {
-      return res.status(400).json({ message: "이미 존재하는 캐릭터입니다." });
+      return res.status(409).json({ message: "이미 존재하는 캐릭터입니다." });
     }
 
     const newChar = new Character({ userId, name, level, image });

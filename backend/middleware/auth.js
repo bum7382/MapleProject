@@ -2,6 +2,7 @@ import admin from "../utils/firebaseAdmin.js";
 
 export async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
+  console.log("🧪 Authorization Header:", authHeader);
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "인증 토큰이 없습니다." });
   }
