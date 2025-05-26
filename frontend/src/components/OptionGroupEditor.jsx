@@ -1,3 +1,5 @@
+// frontend/src/components/OptionGroupEditor.jsx
+// 잠재옵션 또는 에디셔널 잠재옵션을 드롭다운 + 수치 입력 형식으로 설정하는 컴포넌트
 import React, { useEffect, useState, useMemo } from "react";
 import usePotentialOptions from "@/utils/usePotentialOptions";
 
@@ -33,8 +35,6 @@ function parseOptionString(optionStr, allOptions) {
   return null;
 }
 
-
-
 const gradeColor = {
   레전드리: "text-[#CCFF00]",
   유니크: "text-[#FFCC00]",
@@ -44,12 +44,13 @@ const gradeColor = {
 };
 
 export default function OptionGroupEditor({ item, type, onChange }) {
+  // 잠재가 불가능한 부위인지 여부 체크
   const noPotentialSlots = ["뱃지", "훈장", "포켓 아이템"];
   const isSeedRing = item.special_ring_level && item.special_ring_level !== 0;
   const cannotHavePotential =
     noPotentialSlots.includes(item.item_equipment_slot) || isSeedRing;
 
-  const options = usePotentialOptions();
+  const options = usePotentialOptions();  // 전체 옵션 템플릿 불러오기
   const [grade, setGrade] = useState(item[type === "잠재" ? "potential_option_grade" : "additional_potential_option_grade"] || "없음");
   const [parsedOptions, setParsedOptions] = useState([
     { template: null, values: {} },
@@ -63,7 +64,7 @@ export default function OptionGroupEditor({ item, type, onChange }) {
       ? ["potential_option_1", "potential_option_2", "potential_option_3"]
       : ["additional_potential_option_1", "additional_potential_option_2", "additional_potential_option_3"];
 
-  // ✅ 초기값 설정: item과 options가 준비되면 기존 옵션을 parsed로 파싱
+  // 초기값 설정: item과 options가 준비되면 기존 옵션을 parsed로 파싱
   useEffect(() => {
     if (!item || options.length === 0 || initialized) return;
   
@@ -79,10 +80,12 @@ export default function OptionGroupEditor({ item, type, onChange }) {
     setInitialized(true);
   }, [item, options, initialized]);
 
+  // grade 또는 options가 바뀔 때 onChange 콜백 호출
   useEffect(() => {
     onChange && onChange({ grade, options: parsedOptions });
   }, [grade, parsedOptions]);
 
+  // 드롭다운에 보여줄 옵션 필터링 (등급/부위/잠재/에디셔널 조건에 따라)
   const filteredOptions = useMemo(() => {
     const base = options.filter(
       (opt) =>
@@ -90,14 +93,14 @@ export default function OptionGroupEditor({ item, type, onChange }) {
         opt.applicableTo.includes(type) &&
         opt.slots.includes(item.item_equipment_slot)
     );
-
+    // 현재 선택된 값 중 필터에서 누락된 옵션은 유지되도록 강제로 포함
     const selected = parsedOptions
       .map((opt) => opt.template)
       .filter((t) => t && !base.find((b) => b.id === t.id));
 
     return [...base, ...selected];
   }, [options, grade, type, item.item_equipment_slot, parsedOptions]);
-
+  // 입력값 정리 함수 (숫자만 허용, 앞자리 0 제거, 2자리 제한)
   const sanitizeInput = (value) =>
     value.replace(/[^\d]/g, "").replace(/^0+(?!$)/, "").slice(0, 2);
 

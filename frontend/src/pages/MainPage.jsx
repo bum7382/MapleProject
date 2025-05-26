@@ -1,11 +1,9 @@
-// MainPage.jsx
-import React, { useEffect, useState, useMemo } from "react";
-import SearchEquipment from "../components/SearchEquipment.jsx";
+// frontend/src/pages/MainPage.jsx
+import React, { useEffect, useState} from "react";
 import EquipmentInfo from "../components/EquipmentInfo.jsx";
 import { calculatePower } from "@/utils/calculatePower";
-import useMapleStore from "../store/useMapleStore";
 import BasicStatModal from "@/components/BasicStatModal";
-import jobStat from "@/data/jobStat.json"; // 캐릭터별 주/부스탯 정보
+import jobStat from "@/data/jobStat.json";
 import InventoryPanel from "../components/InventoryPanel.jsx";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -15,35 +13,40 @@ import { useToast } from "../utils/toastContext";
 
 
 export default function MainPage() {
-  const [loading, setLoading] = useState(true);
-  const [hoveredSlot, setHoveredSlot] = useState(null);
-  const [isInfoLocked, setInfoLocked] = useState(false);
-  const [equipment, setEquipment] = useState({});
-  const [savedSlots, setSavedSlots] = useState({});
-  const [slotColors, setSlotColors] = useState({});
-  const [originalPower, setOriginalPower] = useState(0);
-  const { character, setCharacter } = useMapleStore();
-  const { selectedSlot, setSelectedSlot } = useMapleStore();
-  const { showSearch, setShowSearch } = useMapleStore();
-  const { showInfo, setShowInfo } = useMapleStore();
-  const [inventory, setInventory] = useState([]);
-  const [originalEquipment, setOriginalEquipment] = useState({});
-  const [equipmentLoaded, setEquipmentLoaded] = useState(false);
-  const [showInventory, setShowInventory] = useState(false);
-  const [loadingEquipment, setLoadingEquipment] = useState(false);
+  const [loading, setLoading] = useState(true); // 로딩 상태
+  // 슬롯
+  const [hoveredSlot, setHoveredSlot] = useState(null); // 슬롯 호버 상태
+  const [isInfoLocked, setInfoLocked] = useState(false);  // 슬롯 클릭 상태
+  const [savedSlots, setSavedSlots] = useState({}); // 슬롯 저장 상태
+  const [slotColors, setSlotColors] = useState({}); // 슬롯 색상 상태
+  const [selectedSlot, setSelectedSlot] = useState(null); // 선택한 슬롯
+
+  // 장비
+  const [equipment, setEquipment] = useState({}); // 장비 정보
+  const [originalEquipment, setOriginalEquipment] = useState({}); // 원본 장비 정보
+  const [equipmentLoaded, setEquipmentLoaded] = useState(false);  // 장비 데이터 로딩 상태
+  const [showInfo, setShowInfo] = useState(false);  // 장비 정보 표시 여부
+  const [isGenesis, setIsGenesis] = useState(null); // 제네시스 무기 여부
+
+  // 전투력
+  const [showModal, setShowModal] = useState(false);  // 기본 능력치 입력창
+  const [baseStats, setBaseStats] = useState(null); // 입력된 기본 능력치
+  const [powerDiff, setPowerDiff] = useState(0);  // 전투력
+  const [originalPower, setOriginalPower] = useState(0);  // 원본 전투력
+  
+  // 인벤토리
+  const [inventory, setInventory] = useState([]); // 인벤토리
+  const [showInventory, setShowInventory] = useState(false);  // 인벤토리 표시 여부
+  const [hoveredInventoryItem, setHoveredInventoryItem] = useState(null); // 인벤토리 아이템 호버 상태
   const navigate = useNavigate();
-  const [hoveredInventoryItem, setHoveredInventoryItem] = useState(null);
   const { showToast } = useToast();
 
-  const [showModal, setShowModal] = useState(false);
-  const [baseStats, setBaseStats] = useState(null); // 입력된 기본값 저장
+  // 캐릭터 정보
+  const [character, setCharacter] = useState(null);
+  const [userId, setUserId] = useState(null); // user ID
 
-  const [powerDiff, setPowerDiff] = useState(0);
 
-  const [isGenesis, setIsGenesis] = useState(null);
-
-  const [userId, setUserId] = useState(null);
-
+  // Firebase 인증 상태 감지
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -54,8 +57,9 @@ export default function MainPage() {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
+
   // 캐릭터가 바뀔 때마다 장비/전투력/슬롯 초기화
+  useEffect(() => {
     setEquipment({});
     setOriginalEquipment({});
     setEquipmentLoaded(false);
@@ -65,13 +69,15 @@ export default function MainPage() {
   }, [character?.character_id]);
 
 
+  // 로컬 스토리지에서 캐릭터 정보 불러오기
   useEffect(() => {
     if (!character) {
+      // 이전에 선택한 캐릭터 불러오기
       const saved = localStorage.getItem("selectedCharacter");
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.name) setCharacter(parsed);
+          setCharacter(parsed);
         } catch (e) {
           console.error("❌ 캐릭터 데이터 파싱 실패", e);
         }
@@ -80,8 +86,10 @@ export default function MainPage() {
     setLoading(false);
   }, []);
   
+  // 기본 능력치 불러오기
   useEffect(() => {
     if (!character?.class) return;
+    // 로컬 스토리지에서 기본 능력치 불러오기
     const saved = JSON.parse(localStorage.getItem("baseStatMap") || "{}");
     const stored = saved[character.class];
     if (stored) {
@@ -89,10 +97,10 @@ export default function MainPage() {
     }
   }, [character?.class]);
 
+
   useEffect(() => {
     if (!character?.character_id) return;
     const fetchEquipments = async () => {
-      setLoadingEquipment(true);
       try {
         const res = await fetch(`/api/itemEquipment?ocid=${character.character_id}`);
         const data = await res.json();
@@ -112,7 +120,7 @@ export default function MainPage() {
           }
           equipmentMap[raw] = item;
         }
-        // ✅ 여기서 제네시스 여부 판단
+        // 제네시스 여부 판단
         const weapon = data.item_equipment.find(item => item.item_equipment_slot === "무기");
         const weaponIsGenesis = weapon?.item_name?.includes("제네시스") || false;
         setIsGenesis(weaponIsGenesis);
@@ -123,8 +131,6 @@ export default function MainPage() {
 
       } catch (e) {
         console.error("❌ 장비 불러오기 실패:", e);
-      } finally {
-      setLoadingEquipment(false); // ✅ 끝나면 false
       }
     };
     fetchEquipments();
@@ -132,7 +138,6 @@ export default function MainPage() {
 
   useEffect(() => {
     if (!userId) return;
-
     const fetchInventory = async () => {
       try {
         const res = await fetch(`/api/inventory/${userId}`);
@@ -188,17 +193,12 @@ export default function MainPage() {
     setInfoLocked(true);
     if (equipment[slotName]) {
       setShowInfo(true);
-      setShowSearch(false);
     } else {
       setShowSearch(true);
-      setShowInfo(false);
     }
   };
 
-  const handleSaveToInventory = (newItem) => {
-    setInventory((prev) => [...prev, newItem]);
-  };
-  
+
   function formatKoreanNumber(num) {
     const abs = Math.abs(num);
     const eok = Math.floor(abs / 100000000);
@@ -367,7 +367,6 @@ export default function MainPage() {
             <button
               onClick={async () => {
                 const item = equipment[selectedSlot];
-                console.log({item});
 
                 const isDuplicate = inventory.some((inv) =>
                   JSON.stringify({ ...inv, price: undefined, uuid: undefined }) ===
@@ -413,10 +412,10 @@ export default function MainPage() {
                 if (!selectedSlot) return;
                   if (item.item_equipment_slot !== selectedSlot) {
                     showToast("선택한 슬롯에 장착할 수 없는 아이템입니다.", "error");
-                    //alert("선택한 슬롯에 장착할 수 없는 아이템입니다.");
-                  return;
-                }
-                // 장착!
+                    return;
+                  }
+
+                // 장비 장착
                 setEquipment((prev) => ({
                   ...prev,
                   [selectedSlot]: item
@@ -431,7 +430,7 @@ export default function MainPage() {
                   character.level
                 );
                 setPowerDiff(newPower - originalPower);
-                // ✅ slotColors 갱신 로직 추가
+                // slotColors 갱신
                 const original = originalEquipment[selectedSlot];
                 const isChanged = isItemChanged(item, original);
                 setSlotColors((prev) => ({
@@ -462,30 +461,20 @@ export default function MainPage() {
         )}
       </div>
         
-      {showSearch && (
-        <SearchEquipment
-          slot={selectedSlot}
-          onClose={() => setShowSearch(false)}
-          onSelectItem={(item) => {
-            setEquipment((prev) => ({ ...prev, [selectedSlot]: item }));
-            setShowSearch(false);
-          }}
-        />
-      )}
 
       {showInfo && hoveredSlot && equipment[hoveredSlot] && (
         <EquipmentInfo
           key={`${hoveredSlot}-${equipment[hoveredSlot]?.item_name}`}
           item={equipment[hoveredSlot]}
           slot={hoveredSlot}
-          editable={isInfoLocked && !showSearch}
+          editable={isInfoLocked}
           onClose={() => {
             setShowInfo(false);
             setInfoLocked(false);
           }}
           onSave={(newItem, diff) => {
             const updated = { ...equipment, [hoveredSlot]: newItem };
-            setPowerDiff(diff); // ✅ 이 줄만 남기고 밑에 diff 계산은 전부 삭제
+            setPowerDiff(diff);
             setEquipment(updated);
             setSavedSlots((prev) => ({ ...prev, [hoveredSlot]: true }));
             setInfoLocked(false);

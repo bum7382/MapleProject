@@ -1,4 +1,5 @@
 // front/src/utils/toastContext.js
+// 토스트 알림 컨텍스트
 import React, { createContext, useContext, useState } from "react";
 
 const ToastContext = createContext();

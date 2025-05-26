@@ -1,11 +1,14 @@
+// frontend/src/components/SearchModal.jsx
+// 캐릭터 검색 모달 컴포넌트
 import React, { useState } from "react";
 import { fetchCharacterByName } from "../utils/fetchCharacterByName";
-import { useToast } from "../utils/toastContext.jsx"; // ✅ 전역 토스트 사용
+import { useToast } from "../utils/toastContext.jsx";
 
 export default function SearchModal({ onClose, onSearch, userId }) {
   const [inputValue, setInputValue] = useState("");
-  const { showToast } = useToast(); // ✅ 훅 사용
+  const { showToast } = useToast();
 
+  // 캐릭터 검색 처리
   const handleSearch = async () => {
     if (!inputValue.trim()) {
       showToast("❌ 캐릭터 이름을 입력하세요.", "error");
@@ -27,9 +30,9 @@ export default function SearchModal({ onClose, onSearch, userId }) {
     };
 
 
-    const success = await onSearch(mappedChar); // ✅ 성공 여부 반환
+    const success = await onSearch(mappedChar);
     if (success) {
-      onClose(); // ✅ 성공일 때만 모달 닫기
+      onClose();
     }
   };
 

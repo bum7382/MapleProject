@@ -1,25 +1,30 @@
+// frontend/src/components/LoginForm.jsx
+// 로그인 폼 컴포넌트
 import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { getFirebaseErrorMessage } from "../utils/firebaseErrors";
 import axios from "axios";
-import { useToast } from "../utils/toastContext.jsx"; // ✅ Toast 훅 추가
+import { useToast } from "../utils/toastContext.jsx";
 
 export default function LoginForm({ onLoginSuccess }) {
+  // 입력된 이메일, 비밀번호 상태
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { showToast } = useToast(); // ✅ 훅 사용
+  const { showToast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;  // 백엔드 주소 (환경변수)
 
+  // 로그인 시도
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("🧨 로그인 버튼 눌림");
 
     try {
-      // ✅ 1. Firebase Auth로 로그인
+      // 1. Firebase Auth로 로그인
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
+
+      // 2. 토큰 받아서 서버 인증 요청
       const token = await firebaseUser.getIdToken();
       const res = await axios.post(`${API_BASE}/api/user`,
         {
@@ -34,17 +39,15 @@ export default function LoginForm({ onLoginSuccess }) {
         }
       );
 
-      const mongoUser = res.data;
-      console.log("✅ Mongo 유저 정보:", mongoUser);
+      const mongoUser = res.data; // 서버에서 받아온 유저 정보
 
-      // ✅ 3. 로컬 스토리지에 저장
+      // 3. 로컬 스토리지에 사용자 정보 저장
       localStorage.setItem("user", JSON.stringify(mongoUser));
 
-      // ✅ 4. 부모 컴포넌트에 유저 정보 전달
+      // 4. 부모 컴포넌트에 유저 정보 전달
       if (onLoginSuccess) onLoginSuccess(mongoUser);
 
     } catch (err) {
-      console.error("🔥 전체 에러 객체:", err);
       console.error("❌ 로그인 후 처리 실패:", err);
 
       const firebaseError = err.code?.startsWith("auth/");
@@ -53,11 +56,12 @@ export default function LoginForm({ onLoginSuccess }) {
       if (firebaseError) {
         const msg = getFirebaseErrorMessage(err);
         showToast("❌ " + msg, "error");
-      } else if (hasResponse) {
+      } 
+      else if (hasResponse) {
         const msg = err.response.data?.message || "서버 오류가 발생했습니다.";
         showToast("❌ " + msg, "error");
-      } else {
-        // ✅ 로그인 자체는 성공했는데, 후처리 실패인 경우도 있으니 메시지 바꾸자
+      } 
+      else {
         showToast("❌ 서버 통신에 실패했습니다. 로그인은 완료되었습니다.", "error");
       }
     }

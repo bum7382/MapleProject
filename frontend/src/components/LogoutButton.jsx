@@ -1,21 +1,25 @@
+// frontend/src/components/LogoutButton.jsx
+// 로그아웃 버튼 컴포넌트
 import React from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
-import { useToast } from "../utils/toastContext.jsx"; // ✅ Toast 훅 추가
+import { useToast } from "../utils/toastContext.jsx";
 
 export default function LogoutButton({ onLogout }) {
-  const { showToast } = useToast(); // ✅ 전역 토스트 사용
+  const { showToast } = useToast();
 
   const handleLogout = async () => {
     try {
+      // Firebase 로그아웃
       await signOut(auth);
+      // 로컬 스토리지에서 사용자 정보 제거
       localStorage.removeItem("user");
 
-      showToast("✅ 로그아웃 완료", "success"); // ✅ 토스트로 대체
+      showToast("✅ 로그아웃 완료", "success");
 
       if (onLogout) onLogout();
     } catch (err) {
-      showToast("❌ 로그아웃 실패\n" + err.message, "error"); // ✅ 에러 토스트
+      showToast("❌ 로그아웃 실패\n" + err.message, "error");
     }
   };
 

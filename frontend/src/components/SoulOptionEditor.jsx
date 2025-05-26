@@ -1,4 +1,5 @@
 // src/components/SoulOptionEditor.jsx
+// 소울 옵션 편집기 컴포넌트
 import React from "react";
 import useSoulOptions from "@/utils/useSoulOptions";
 
@@ -29,8 +30,8 @@ export default function SoulOptionEditor({ value, onChange }) {
             type="text"
             value={statValue}
             onChange={(e) => {
-              const raw = e.target.value.replace(/^0+(?!$)/, ""); // 1️⃣ 앞자리 0 제거
-              const digits = raw.replace(/[^\d]/g, "").slice(0, 4); // 2️⃣ 숫자만, 최대 4자리
+              const raw = e.target.value.replace(/^0+(?!$)/, ""); // 앞자리 0 제거
+              const digits = raw.replace(/[^\d]/g, "").slice(0, 4); // 숫자만, 최대 4자리
               onChange({ template, value: digits });
             }}
             className="w-[60px] text-sm text-right bg-transparent border-b border-white text-white px-1"

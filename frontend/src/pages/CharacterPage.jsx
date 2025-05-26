@@ -1,3 +1,4 @@
+// src/pages/CharacterPage.jsx
 import React, { useEffect, useState } from "react";
 import CharacterSelect from "../components/CharacterSelect";
 import axios from "axios";
@@ -6,15 +7,15 @@ import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../utils/toastContext.jsx";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+const API_BASE = import.meta.env.VITE_BACKEND_URL;  // 백엔드 주소 (.env)
 
 export default function CharacterPage({ user: mongoUser }) {
   const [firebaseUser, setFirebaseUser] = useState(null); // Firebase 인증 유저
-  const [characters, setCharacters] = useState([]);
+  const [characters, setCharacters] = useState([]); // MongoDB에서 가져온 캐릭터 목록
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // ✅ 캐릭터 조회 함수 (Firebase 토큰 기반)
+  // 캐릭터 조회 함수 (Firebase 토큰 기반)
   const fetchCharacters = async (fbUser) => {
     try {
       const token = await fbUser.getIdToken();
@@ -37,7 +38,7 @@ export default function CharacterPage({ user: mongoUser }) {
     }
   };
 
-  // ✅ Firebase 로그인 감지 및 캐릭터 조회
+  // Firebase 로그인 감지 및 캐릭터 조회
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (!fbUser) {
@@ -53,6 +54,7 @@ export default function CharacterPage({ user: mongoUser }) {
     return () => unsubscribe();
   }, [navigate]);
 
+  // 로그아웃 처리
   const handleLogout = async () => {
     try {
       await signOut(auth);

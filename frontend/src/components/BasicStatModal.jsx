@@ -1,14 +1,16 @@
-// BasicStatModal.jsx
+// frontend/src/componets/BasicStatModal.jsx
+// 기본 능력치를 입력받는 모달 컴포넌트
 import React, { useState, useEffect } from "react";
 
 export default function BasicStatModal({ jobClass, mainStat, subStat, isMagicClass, onSave, onClose }) {
-  const [values, setValues] = useState({});
-  const [hoveringExample, setHoveringExample] = useState(false);
+  const [values, setValues] = useState({}); // 모든 입력 값 저장
+  const [hoveringExample, setHoveringExample] = useState(false);  // 예시 이미지 hover 상태
 
+  // 최초 로딩 시 로컬 스토리지에서 값 불러오기
   useEffect(() => {
-    if (Object.keys(values).length > 0) return;
+    if (Object.keys(values).length > 0) return; // 이미 값이 있다면 초기화하지 않음
     const savedMap = JSON.parse(localStorage.getItem("baseStatMap") || "{}");
-    const stored = savedMap[jobClass] || {};
+    const stored = savedMap[jobClass] || {};  // 해당 직업의 기존 값
 
 
     const initial = {
@@ -26,10 +28,12 @@ export default function BasicStatModal({ jobClass, mainStat, subStat, isMagicCla
     setValues(initial);
   }, [mainStat, subStat, isMagicClass]);
 
+  // 숫자 외 입력 방지 및 앞자리 0 제거
   const handleChange = (key, val) => {
     const onlyDigits = val.replace(/[^\d]/g, "").replace(/^0+(?=\d)/, "");
     setValues(prev => ({ ...prev, [key]: onlyDigits }));
   };
+
 
   const renderLabeledRow = (label, children) => (
     <div className="flex items-center justify-between gap-2">
@@ -38,12 +42,14 @@ export default function BasicStatModal({ jobClass, mainStat, subStat, isMagicCla
     </div>
   );
 
+  // 저장 버튼
   const handleSave = () => {
+    // 로컬 스토리지에 저장
     const savedMap = JSON.parse(localStorage.getItem("baseStatMap") || "{}");
     const parsedValues = Object.fromEntries(
-      Object.entries(values).map(([k, v]) => [k, Number(v) || 0])
+      Object.entries(values).map(([k, v]) => [k, Number(v) || 0]) // 숫자로 변환
     );
-    savedMap[jobClass] = parsedValues;
+    savedMap[jobClass] = parsedValues;  // 해당 직업의 값만 저장
     localStorage.setItem("baseStatMap", JSON.stringify(savedMap));
     onSave(parsedValues);
     onClose();

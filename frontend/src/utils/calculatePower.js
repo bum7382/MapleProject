@@ -1,3 +1,5 @@
+// frontnend/src/utils/calculatePower.js
+// 전투력 계산 유틸리티
 import jobStat from "../data/jobStat.json";
 import potentialOptions from "../data/potentialOptions.json";
 import setEffect from "../data/setEffect.json";
@@ -219,6 +221,5 @@ export function calculatePower(equipments, jobClass, finalDmg, originalIsGenesis
   finalDmg /= 100;
 
   const power = Math.floor(finalStat * finalAtk * finalBoss * finalCrit * finalDmg * finalDamageMultiplier);
-  console.log(`계산한 전투력: ${power}`);
   return isNaN(power) ? 0 : power;
 }

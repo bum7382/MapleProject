@@ -1,3 +1,5 @@
+// frontend/src/components/SignupForm.jsx
+// 회원가입 폼 컴포넌트
 import React, { useState } from "react";
 import {
   createUserWithEmailAndPassword,
@@ -8,10 +10,12 @@ import { getFirebaseErrorMessage } from "../utils/firebaseErrors";
 import axios from "axios";
 
 export default function SignupForm({ onSignupSuccess, setUser }) {
+  // 입력 상태
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
 
+  // 회원가입 실행 함수
   const handleSignup = async (e) => {
     e.preventDefault();
 
@@ -19,7 +23,7 @@ export default function SignupForm({ onSignupSuccess, setUser }) {
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedNickname = nickname.trim();
 
-      // ✅ 1. 중복 확인
+      // 중복 확인
       const checkRes = await axios.get(
         `/api/user/check-user?email=${trimmedEmail}&nickname=${trimmedNickname}`
       );
@@ -34,7 +38,7 @@ export default function SignupForm({ onSignupSuccess, setUser }) {
         return;
       }
 
-      // ✅ 2. Firebase 계정 생성
+      // Firebase 계정 생성
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         trimmedEmail,
@@ -42,10 +46,10 @@ export default function SignupForm({ onSignupSuccess, setUser }) {
       );
       const user = userCredential.user;
 
-      // ✅ 3. Firebase 프로필에 닉네임 저장
+      // Firebase 프로필에 닉네임 저장
       await updateProfile(user, { displayName: trimmedNickname });
 
-      // ✅ 4. Firebase 토큰 받아서 MongoDB 등록
+      // Firebase 토큰 받아서 MongoDB 등록
       const token = await user.getIdToken();
 
       const res = await axios.post(
@@ -62,7 +66,7 @@ export default function SignupForm({ onSignupSuccess, setUser }) {
         }
       );
 
-      // ✅ 5. 결과 저장
+      // 5. 로컬 스토리지 및 상태 저장
       const mongoUser = res.data;
       localStorage.setItem("user", JSON.stringify(mongoUser));
       setUser?.(mongoUser);

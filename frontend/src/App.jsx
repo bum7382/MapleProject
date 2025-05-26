@@ -1,32 +1,43 @@
 // frontend/src/App.jsx
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+// 페이지 라우트
 import IntroPage from "./pages/IntroPage";
 import CharacterPage from "./pages/CharacterPage";
 import MainPage from "./pages/MainPage";
-import { auth } from "./firebase";
+
+// Firebase 인증
+import { auth } from "./firebase";  
 import { onAuthStateChanged } from "firebase/auth";
+
 import axios from "axios";
-import { ToastProvider } from "./utils/toastContext.jsx"; // ✅ ToastProvider 추가
-import EquipmentTest from "./pages/EquipmentTest";
+
+import { ToastProvider } from "./utils/toastContext.jsx";  // 전역 토스트 컨텍스트
+import Loading from "./components/Loading";  // 로딩 컴포넌트
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null); // Firebase 인증된 유저 정보
+  const [loading, setLoading] = useState(true); // 초기 로딩 상태
+  const [showLoading, setShowLoading] = useState(true); // 로딩 화면 표시 여부
+
+  // 앱 최초 로딩 시 → Firebase 로그인 상태 감지
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
+          // 토큰 발급 및 사용자 정보 복원
           const token = await firebaseUser.getIdToken();
           const res = await axios.get(`/api/user/firebase/${firebaseUser.uid}`,{
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${token}`, // 백엔드 인증 토큰 포함
               },
           });
           setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
+          localStorage.setItem("user", JSON.stringify(res.data)); // 웹 스토리지 저장
         } else {
+          // ❌ 로그아웃 처리
           setUser(null);
           localStorage.removeItem("user");
         }
@@ -35,33 +46,38 @@ function App() {
         setUser(null);
       } finally {
         setLoading(false);
+        setTimeout(() => setShowLoading(false), 500); // 로딩 화면 0.5초 후 사라짐
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribe(); // cleanup
   }, []);
+
 
   const selectedChar = localStorage.getItem("selectedCharacter");
 
-  if (loading) return null;
+  // 로딩 중에는 로딩화면 출력
+  if (showLoading) return <Loading visible={loading} />;
 
   return (
-    <ToastProvider> {/* ✅ 전역 ToastContext 적용 */}
-      <Router>
-        <Routes>
-          <Route path="/" element={<IntroPage setUser={setUser} />} />
-          <Route
-            path="/character"
-            element={user ? <CharacterPage user={user} /> : <Navigate to="/" replace />}
-          />
-          <Route path="/main" element={<MainPage />} />
-          <Route
-            path="/start"
-            element={selectedChar ? <Navigate to="/main" replace /> : <Navigate to="/character" replace />}
-          />
-          <Route path="/equipment-test" element={<EquipmentTest />} />
-        </Routes>
-      </Router>
-    </ToastProvider>
+    <>
+      <ToastProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<IntroPage setUser={setUser} />} />
+            <Route
+              path="/character"
+              element={user ? <CharacterPage user={user} /> : <Navigate to="/" replace />}
+              />
+            <Route path="/main" element={<MainPage />} />
+            <Route
+              path="/start"
+              element={selectedChar ? <Navigate to="/main" replace /> : <Navigate to="/character" replace />}
+              />
+          </Routes>
+        </Router>
+      </ToastProvider>
+      {<Loading visible={loading} />}
+    </>
   );
 }
 

@@ -1,3 +1,5 @@
+// frontnend/src/utils/firebaseErrors.js
+// firebase 에러 메시지 유틸리티 함수
 export function getFirebaseErrorMessage(error) {
   const code = error.code;
 

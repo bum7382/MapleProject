@@ -1,3 +1,5 @@
+// frontend/src/pages/IntroPage.jsx
+// 처음 화면
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
@@ -6,7 +8,7 @@ import LoginForm from "../components/LoginForm";
 import SignupForm from "../components/SignupForm";
 import SearchModal from "../components/SearchModal";
 import axios from "axios";
-import { useToast } from "../utils/toastContext"; // ✅ 전역 토스트
+import { useToast } from "../utils/toastContext";
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
@@ -15,7 +17,7 @@ export default function IntroPage({ setUser }) {
   const [showSignup, setShowSignup] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
-  const { showToast } = useToast(); // ✅ 전역 토스트 훅 사용
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [mongoUser, setMongoUser] = useState(null);
@@ -24,16 +26,16 @@ export default function IntroPage({ setUser }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        setFirebaseUser(fbUser); // ✅ Firebase 유저 저장
+        setFirebaseUser(fbUser); // Firebase 유저 저장
 
         try {
           const token = await fbUser.getIdToken();
           const res = await axios.get(`${API_BASE}/api/user/firebase/${fbUser.uid}`,{
             headers: {
-              Authorization: `Bearer ${token}`, // ✅ 인증 헤더 추가
+              Authorization: `Bearer ${token}`, // 인증 헤더 추가
             },
         });
-          setMongoUser(res.data); // ✅ Mongo 유저 저장
+          setMongoUser(res.data); // Mongo 유저 저장
           localStorage.setItem("user", JSON.stringify(res.data));
           navigate("/character", { replace: true });
         } catch (err) {
