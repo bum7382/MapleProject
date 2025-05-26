@@ -85,8 +85,8 @@ export default function IntroPage({ setUser }) {
                 showToast("✅ 로그인 성공!", "success");
                 setShowLogin(false);
                 setUser({
-                  mongoUser: res.data,
-                  firebaseUser: fbUser,
+                  mongoUser,
+                  firebaseUser: auth.currentUser,
                 });
                 localStorage.setItem("user", JSON.stringify(mongoUser));
                 navigate("/character", { replace: true });

@@ -51,6 +51,7 @@ export default function EquipmentInfo({
   setInventory,
   inventory
 }) {
+  
   const [price, setPrice] = useState(item.price?.toString() || "0");  // 가격
   const [soulOption, setSoulOption] = useState(item.soul_option || "없음"); // 소울
   const [starforce, setStarforce] = useState(Number(item.starforce || 0));  // 스타포스
@@ -70,6 +71,7 @@ export default function EquipmentInfo({
   
   // 소울
   const soulOptions = useSoulOptions();
+  
 
   const [soulTemplate, setSoulTemplate] = useState(() => {
     const match = soulOptions.find(opt => item.soul_option?.startsWith(opt.label));
@@ -183,7 +185,7 @@ export default function EquipmentInfo({
   };
 
   const renderStatLine = (label, key) => {
-    const base = +item.item_base_option[key] || 0;
+    const base = +item.item_base_option?.[key] || 0;
     const isPercent = percentKeys.includes(key);
     const isPercentKey = percentKeys.includes(key);
     const slot = item.item_equipment_slot;
@@ -194,12 +196,6 @@ export default function EquipmentInfo({
       (armorOnly.includes(key) && slot !== "무기");
 
     if (!allowBySlot) return null;
-
-
-    // ⭐ 상태로 각 항목 관리
-    //const [etc, setEtc] = useState(etcOptions[key] || "");
-    //const [star, setStar] = useState(starforceOption[key] || "");
-    //const [add, setAdd] = useState(addOptions[key] || "");
 
     const parseValue = (val) => {
       if (typeof val === "string" && val.includes("%")) {

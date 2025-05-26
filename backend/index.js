@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path"; // ✅ 추가
 import { fileURLToPath } from "url"; // ✅ ESM용 경로 처리
+import helmet from "helmet";
 
 // 라우터 import
 import userRoutes from "./routes/user.js";
@@ -17,6 +18,8 @@ const app = express();
 // ✅ ESM에서 __dirname 대체 코드
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+app.use(helmet());
 
 // 미들웨어
 app.use(cors());

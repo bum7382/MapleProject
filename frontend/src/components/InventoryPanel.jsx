@@ -2,14 +2,13 @@ import React, { useState } from "react";
 
 const SLOTS_PER_PAGE = 18;
 
-export default function InventoryPanel({ items = [], onSlotClick, onDeleteClick }) {
+export default function InventoryPanel({ items = [], onSlotClick, onDeleteClick, onHoverItem, onHoverOut }) {
   const [page, setPage] = useState(0);
   const totalPages = Math.ceil(items.length / SLOTS_PER_PAGE) || 1;
 
   const startIdx = page * SLOTS_PER_PAGE;
   const currentItems = items.slice(startIdx, startIdx + SLOTS_PER_PAGE);
   const slots = [...Array(SLOTS_PER_PAGE)].map((_, idx) => currentItems[idx] || null);
-
   return (
     <div className="relative bottom-10 inline-block w-[500px] overflow-visible">
       {/* 인벤토리 배경 */}
@@ -26,6 +25,8 @@ export default function InventoryPanel({ items = [], onSlotClick, onDeleteClick 
                 key={idx}
                 className="relative w-[46px] h-[46px] flex items-center justify-center active:bg-[#000000]/20 hover:bg-[#FFFFFF]/20 transition shadow-md"
                 onClick={() => onSlotClick?.(item, globalIdx)}
+                onMouseEnter={() => item && onHoverItem?.(item)}
+                onMouseLeave={() => item && onHoverOut?.()}
               >
                 {item && (
                   <>
@@ -59,6 +60,8 @@ export default function InventoryPanel({ items = [], onSlotClick, onDeleteClick 
                 key={idx + 10}
                 className="relative w-[46px] h-[46px] flex items-center justify-center active:bg-[#000000]/20 hover:bg-[#FFFFFF]/20 transition shadow-md"
                 onClick={() => onSlotClick?.(item, globalIdx)}
+                onMouseEnter={() => item && onHoverItem?.(item)}
+                onMouseLeave={() => item && onHoverOut?.()}
               >
                 {item && (
                   <>

@@ -10,6 +10,8 @@ import InventoryPanel from "../components/InventoryPanel.jsx";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { isItemChanged } from "@/utils/equipmentUtils";
+import { useToast } from "../utils/toastContext";
+
 
 
 export default function MainPage() {
@@ -30,7 +32,9 @@ export default function MainPage() {
   const [showInventory, setShowInventory] = useState(false);
   const [loadingEquipment, setLoadingEquipment] = useState(false);
   const navigate = useNavigate();
-  
+  const [hoveredInventoryItem, setHoveredInventoryItem] = useState(null);
+  const { showToast } = useToast();
+
   const [showModal, setShowModal] = useState(false);
   const [baseStats, setBaseStats] = useState(null); // 입력된 기본값 저장
 
@@ -408,7 +412,8 @@ export default function MainPage() {
               onSlotClick={(item, index) => {
                 if (!selectedSlot) return;
                   if (item.item_equipment_slot !== selectedSlot) {
-                    alert("선택한 슬롯에 장착할 수 없는 아이템입니다.");
+                    showToast("선택한 슬롯에 장착할 수 없는 아이템입니다.", "error");
+                    //alert("선택한 슬롯에 장착할 수 없는 아이템입니다.");
                   return;
                 }
                 // 장착!
@@ -416,7 +421,6 @@ export default function MainPage() {
                   ...prev,
                   [selectedSlot]: item
                 }));
-                
                 // 전투력 계산
                 const newPower = calculatePower(
                   Object.values({ ...equipment, [selectedSlot]: item }),
@@ -427,7 +431,7 @@ export default function MainPage() {
                   character.level
                 );
                 setPowerDiff(newPower - originalPower);
-                // ✅ slotColors 갱신 로직 추가 (여기!)
+                // ✅ slotColors 갱신 로직 추가
                 const original = originalEquipment[selectedSlot];
                 const isChanged = isItemChanged(item, original);
                 setSlotColors((prev) => ({
@@ -451,11 +455,13 @@ export default function MainPage() {
                   console.error("❌ 인벤토리 삭제 실패:", err);
                 }
               }}
+              onHoverItem={(item) => setHoveredInventoryItem(item)}
+              onHoverOut={() => setHoveredInventoryItem(null)}
             />
           </div>
         )}
       </div>
-
+        
       {showSearch && (
         <SearchEquipment
           slot={selectedSlot}
@@ -500,6 +506,29 @@ export default function MainPage() {
           baseStats={baseStats}
         />
       )}
+      
+      {hoveredInventoryItem && !isInfoLocked && (
+      <EquipmentInfo
+        key={`inv-${hoveredInventoryItem.uuid || hoveredInventoryItem.item_name}`}
+        item={hoveredInventoryItem}
+        slot={hoveredInventoryItem.item_equipment_slot}
+        editable={false}
+        onClose={() => setHoveredInventoryItem(null)}
+        originalEquipment={originalEquipment} // 원본 장비 정보 전달
+        currentEquipment={equipment} // 현재 장비 상태
+        equippedItems={Object.values(equipment)}
+        character={character}
+        originalPower={originalPower}
+        inventory={inventory}
+        setInventory={setInventory}
+        slotColors={{}}
+        setSlotColors={() => {}}
+        setPowerDiff={setPowerDiff}
+        setEquipment={setEquipment}
+        equipment={equipment}
+        baseStats={baseStats}
+      />
+    )}
     </div>
   );
 }
