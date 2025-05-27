@@ -1,11 +1,12 @@
 // serverless/tests/itemEqipment.test.js
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import handler from '../api/itemEqipment.js';
 
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('itemEqipment handler', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('정상적으로 장비 정보 반환', async () => {
@@ -16,8 +17,8 @@ describe('itemEqipment handler', () => {
 
     const req = { query: { ocid: 'ocid-123' } };
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
 
     await handler(req, res);
@@ -31,8 +32,8 @@ describe('itemEqipment handler', () => {
   it('ocid 없이 호출 시 400 반환', async () => {
     const req = { query: {} };
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
 
     await handler(req, res);
@@ -48,8 +49,8 @@ describe('itemEqipment handler', () => {
 
     const req = { query: { ocid: 'ocid-123' } };
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
 
     await handler(req, res);

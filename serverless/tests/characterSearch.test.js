@@ -1,12 +1,12 @@
-// serverless/tests/characterSearch.test.js
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import handler from '../api/characterSearch.js';
 
 // fetch mock
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('characterSearch handler', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('정상 케이스: 닉네임으로 캐릭터 정보/스탯 받아오기', async () => {
@@ -29,8 +29,8 @@ describe('characterSearch handler', () => {
 
     const req = { query: { name: '메이플짱' } };
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
 
     await handler(req, res);
@@ -53,8 +53,8 @@ describe('characterSearch handler', () => {
 
     const req = { query: { name: '없는캐릭' } };
     const res = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      status: vi.fn().mockReturnThis(),
+      json: vi.fn()
     };
 
     await handler(req, res);
