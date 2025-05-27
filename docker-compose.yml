@@ -1,25 +1,19 @@
+version: "3.8"
+
 services:
-  nginx:
-    build:
-      context: ./proxy
-      dockerfile: Dockerfile
+  frontend:
+    image: bum1215k/maple-nginx
     container_name: nginx-proxy
     ports:
-      - "8080:80"
-    volumes:
-      - ./static/dist:/usr/share/nginx/html
+      - "80:80"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: bum1215k/mapleproject:latest
     container_name: backend-service
     ports:
-      - "3030:3030"
-    volumes:
-      - ./backend:/app
-    env_file:
-      - ./backend/.env 
-
-
-        
+      - "3000:3000"
+    environment:
+      - MONGODB_URI
+      - FIREBASE_PROJECT_ID
+      - FIREBASE_CLIENT_EMAIL
+      - FIREBASE_PRIVATE_KEY

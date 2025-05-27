@@ -2,7 +2,7 @@ name: CD Pipeline
 
 on:
   workflow_run:
-    workflows: ["Node.js CI"]
+    workflows: ["CI Pipeline"]
     types:
       - completed
 
@@ -11,13 +11,19 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Pull latest image (backend + nginx)
+    - name: Deploy on EC2
       run: |
-        cd /home/ubuntu/MapleProject
-        docker-compose pull
+        mkdir -p ~/MapleProject
+        cd ~/MapleProject
 
-    - name: Restart all services
-      run: |
-        cd /home/ubuntu/MapleProject
+        # docker-compose.yml 최신 상태로 다운로드 (예: GitHub raw 링크 사용)
+        curl -sSf -o docker-compose.yml https://raw.githubusercontent.com/bum7382/MapleProject/main/deploy/docker-compose.yml
+
+        export MONGODB_URI="${{ secrets.MONGODB_URI }}"
+        export FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
+        export FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}"
+        export FIREBASE_PRIVATE_KEY="${{ secrets.FIREBASE_PRIVATE_KEY }}"
+
         docker-compose down -v
-        docker-compose up -d --build
+        docker-compose pull
+        docker-compose up -d
