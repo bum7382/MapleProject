@@ -1,7 +1,44 @@
-# 백엔드 환경변수 제외
-backend/.env
+# ===== 공통 =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
 
-# 프론트엔드 환경변수 제외
+# ===== backend =====
+backend/node_modules/
+backend/.env
+backend/coverage/
+backend/dist/
+backend/package-lock.json
+
+# ===== frontend =====
+frontend/node_modules/
 frontend/.env
-frontend/node_modules
-frontend/dist
+frontend/dist/
+frontend/coverage/
+frontend/.next/
+frontend/.cache/
+frontend/build/
+frontend/package-lock.json
+
+# ===== serverless =====
+serverless/.env
+serverless/.vercel
+serverless/.output
+
+# ===== static =====
+static/dist/
+
+# ===== 기타 환경파일 =====
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ===== docker =====
+*.local
+docker-data/
