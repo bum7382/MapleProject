@@ -37,6 +37,9 @@ jobs:
         cd frontend
         npm install
         npm run build
+        cd ..
+        rm -rf static/dist
+        cp -r frontend/dist static/dist
 
     - name: Install backend dependencies
       run: |
