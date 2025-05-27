@@ -30,9 +30,5 @@ app.use("/api/inventory", inventoryRouter); // 인벤토리 API
 // 정적 파일 제공 (Vite 빌드 폴더 경로)
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-// 프론트 라우팅 지원을 위한 fallback - 항상 index.html 반환
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-});
 
 export default app; // ESM 모듈로 내보내기
