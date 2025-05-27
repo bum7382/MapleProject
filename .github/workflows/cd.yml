@@ -19,4 +19,11 @@ jobs:
 
     - name: Run new container
       run: |
-        sudo docker run -d --name mapleproject -p 80:3000 bum1215k/mapleproject:latest
+        sudo docker run -d \
+          --name mapleproject \
+          -p 80:3000 \
+          -e MONGODB_URI="${{ secrets.MONGODB_URI }}" \
+          -e FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
+          -e FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}" \
+          -e FIREBASE_PRIVATE_KEY="${{ secrets.FIREBASE_PRIVATE_KEY }}" \
+          bum1215k/mapleproject:latest
