@@ -21,7 +21,7 @@ html, body, #root {
 
 @font-face {
   font-family: 'morris9';
-  src: url('/public/fonts/morris9.ttf') format('ttf');
+  src: url('/public/fonts/morris9.ttf') format('truetype');
 }
 
 @font-face {

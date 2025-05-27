@@ -9,6 +9,7 @@ import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { isItemChanged } from "@/utils/equipmentUtils";
 import { useToast } from "../utils/toastContext";
+import { v4 as uuidv4 } from 'uuid';
 
 
 
@@ -374,7 +375,7 @@ export default function MainPage() {
                 );
 
                 if (!isDuplicate) {
-                  const newItem = { ...item, uuid: crypto.randomUUID() };
+                  const newItem = { ...item, uuid: uuidv4() };
                   // 1. 로컬 인벤토리에 추가
                   setInventory((prev) => [...prev, newItem]);
 
