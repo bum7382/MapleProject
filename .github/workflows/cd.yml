@@ -1,0 +1,22 @@
+name: CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["Node.js CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Delete old container (optional)
+      run: sudo docker rm -f mapleproject || true
+
+    - name: Pull Docker image
+      run: sudo docker pull bum1215k/mapleproject:latest
+
+    - name: Run new container
+      run: |
+        sudo docker run -d --name mapleproject -p 80:3000 bum1215k/mapleproject:latest
