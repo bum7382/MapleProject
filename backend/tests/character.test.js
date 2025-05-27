@@ -7,8 +7,8 @@ jest.mock('../middleware/auth.js', () => ({
   }
 }));
 
-import request from "supertest";
-import app from "../app.js";
+const request = require("supertest");
+const app = require("../app.js");
 
 describe("Character API", () => {
   let charId = null;

@@ -1,7 +1,7 @@
 // backend/tests/inventory.test.js
 
-import request from "supertest";
-import app from "../app.js";
+const request = require("supertest");
+const app = require("../app.js");
 
 describe("Inventory API", () => {
   const userId = "test-uid-1";
