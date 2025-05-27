@@ -17,7 +17,7 @@ jobs:
         cd ~/MapleProject
 
         # docker-compose.yml 최신 상태로 다운로드 (예: GitHub raw 링크 사용)
-        curl -sSf -o docker-compose.yml https://raw.githubusercontent.com/bum7382/MapleProject/main/deploy/docker-compose.yml
+        curl -sSf -o docker-compose.yml https://raw.githubusercontent.com/bum7382/MapleProject/main/docker-compose.yml
 
         export MONGODB_URI="${{ secrets.MONGODB_URI }}"
         export FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
