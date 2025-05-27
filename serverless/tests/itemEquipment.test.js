@@ -1,10 +1,10 @@
 // serverless/tests/itemEqipment.test.js
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import handler from '../api/itemEqipment.js';
+import handler from '../api/itemEquipment.js';
 
 global.fetch = vi.fn();
 
-describe('itemEqipment handler', () => {
+describe('itemEquipment handler', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
