@@ -29,7 +29,12 @@ jobs:
         cd backend
         npm test
 
-    - name: Run serverless tests (using backend jest)
+    - name: Install serverless dependencies
       run: |
-        cd backend
-        npx jest ../../serverless/tests
+        cd serverless
+        npm install
+
+    - name: Run serverless tests
+      run: |
+        cd serverless
+        npm test
