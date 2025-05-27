@@ -38,6 +38,7 @@ jobs:
         npm install
         npm run build
         cd ..
+        mkdir -p static/dist
         rm -rf static/dist
         cp -r frontend/dist static/dist
 
