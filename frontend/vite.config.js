@@ -8,14 +8,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3030', // vercel dev 실행 중인 주소
+        target: 'http://localhost:3030',
         changeOrigin: true,
       },
     },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')  // ← 이거 추가
+      '@': path.resolve(__dirname, 'src')
     }
   }
 })

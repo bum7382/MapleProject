@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./frontend/dist:/usr/share/nginx/html  
+      - ./static/dist:/usr/share/nginx/html
 
   backend:
     build:
