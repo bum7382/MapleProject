@@ -9,7 +9,6 @@ import userRoutes from "./routes/user.js";
 import characterRoutes from "./routes/character.js";
 import inventoryRouter from "./routes/inventory.js";
 
-
 const app = express();
 
 // ESM 환경에서 __dirname 대체 처리
