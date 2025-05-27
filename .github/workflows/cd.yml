@@ -11,19 +11,13 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Delete old container (optional)
-      run: sudo docker rm -f mapleproject || true
-
-    - name: Pull Docker image
-      run: sudo docker pull bum1215k/mapleproject:latest
-
-    - name: Run new container
+    - name: Pull latest image (backend + nginx)
       run: |
-        sudo docker run -d \
-          --name mapleproject \
-          -p 80:3000 \
-          -e MONGODB_URI="${{ secrets.MONGODB_URI }}" \
-          -e FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}" \
-          -e FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}" \
-          -e FIREBASE_PRIVATE_KEY="${{ secrets.FIREBASE_PRIVATE_KEY }}" \
-          bum1215k/mapleproject:latest
+        cd /home/ubuntu/MapleProject
+        docker-compose pull
+
+    - name: Restart all services
+      run: |
+        cd /home/ubuntu/MapleProject
+        docker-compose down -v
+        docker-compose up -d --build
