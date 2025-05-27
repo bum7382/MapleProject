@@ -18,7 +18,7 @@ try {
 }
 
 // 서버 실행
-const PORT = 3030;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`🚀 서버 실행 중`);
 });
