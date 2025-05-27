@@ -1,6 +1,5 @@
 // backend/app.js
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import path from "path"; // 경로 조작용
 import { fileURLToPath } from "url"; // ESM에서 __dirname 대체용
@@ -37,21 +36,3 @@ app.get("*", (req, res) => {
 });
 
 export default app; // ESM 모듈로 내보내기
-
-// MongoDB 연결
-try {
-  await mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
-  console.log("✅ MongoDB 연결 성공");
-} catch (err) {
-  console.error("❌ MongoDB 연결 실패:", err);
-  process.exit(1); // 실패 시 종료
-}
-
-// 서버 실행
-const PORT = 3030;
-app.listen(PORT, () => {
-  console.log(`🚀 서버 실행 중`);
-});

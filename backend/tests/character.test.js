@@ -1,14 +1,33 @@
 // backend/tests/character.test.js
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import { setupTestDB } from './setup.js';
 
-jest.mock('../middleware/auth.js', () => ({
+let teardown;
+beforeAll(async () => {
+  teardown = await setupTestDB();
+});
+afterAll(async () => {
+  await teardown();
+});
+
+
+vi.mock('../middleware/auth.js', () => ({
   verifyToken: (req, res, next) => {
-    req.user = { uid: 'test-uid-1' }; // 테스트용 유저 ID
+    req.user = { uid: 'test-uid-1' };
     next();
   }
 }));
 
-const request = require("supertest");
-const app = require("../app.js");
+vi.mock('../utils/firebaseAdmin.js', () => ({
+  getAdmin: () => ({
+    auth: () => ({
+      verifyIdToken: vi.fn(() => Promise.resolve({ uid: 'test-uid-1' })),
+    }),
+  }),
+}));
+
+import request from "supertest";
+import app from "../app.js";
 
 describe("Character API", () => {
   let charId = null;

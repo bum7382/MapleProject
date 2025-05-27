@@ -1,7 +1,26 @@
 // backend/tests/inventory.test.js
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import { setupTestDB } from './setup.js';
 
-const request = require("supertest");
-const app = require("../app.js");
+let teardown;
+beforeAll(async () => {
+  teardown = await setupTestDB();
+});
+afterAll(async () => {
+  await teardown();
+});
+
+vi.mock('../utils/firebaseAdmin.js', () => ({
+  getAdmin: () => ({
+    auth: () => ({
+      verifyIdToken: vi.fn(() => Promise.resolve({ uid: 'test-uid-1' })),
+    }),
+  }),
+}));
+
+import request from "supertest";
+import app from "../app.js";
+
 
 describe("Inventory API", () => {
   const userId = "test-uid-1";
